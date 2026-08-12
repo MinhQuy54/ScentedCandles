@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package scented_candles.ai.v1;
+
+// Service xử lý toàn bộ logic AI & Search nội bộ
+service ScentedCandlesAIService {
+  // 1. Chatbot Tư Vấn (Server Streaming RPC): Trả về từng đoạn chữ real-time (hiệu ứng typing)
+  rpc StreamAIChat (ChatRequest) returns (stream ChatChunk);
+
+  // 2. Hybrid Search (Simple RPC): Kết hợp Full-text (Elasticsearch) + Vector (Qdrant)
+  rpc SmartSearch (SearchQuery) returns (SearchResponse);
+
+  // 3. Metadata Extraction (Simple RPC): Bóc tách thuộc tính nến thơm khi Admin tạo sản phẩm
+  rpc ExtractCandleMetadata (ExtractRequest) returns (ExtractResponse);
+}
+
+message ChatRequest {
+  string user_id = 1;
+  string message = 2;
+  repeated string chat_history = 3; // Ngữ cảnh câu hỏi trước đó
+}
+
+message ChatChunk {
+  string delta_text = 1; // Từng cụm từ trả về real-time
+  bool is_finished = 2;  // Cờ báo hiệu kết thúc stream
+}
+
+message SearchQuery {
+  string query = 1;      // VD: "nến thơm mùi gỗ ấm cho phòng ngủ buổi tối"
+  int32 limit = 2;      // Số lượng sản phẩm tối đa trả về
+}
+
+message CandleProduct {
+  string id = 1;
+  string name = 2;
+  double price = 3;
+  string image_url = 4;
+  float similarity_score = 5; // Điểm khớp ngữ nghĩa (Score)
+}
+
+message SearchResponse {
+  repeated CandleProduct products = 1;
+}
+
+message ExtractRequest {
+  string raw_description = 1;
+}
+
+message ExtractResponse {
+  repeated string top_notes = 1;    // Hương đầu (VD: ["Chanh", "Cam"])
+  repeated string middle_notes = 2; // Hương giữa (VD: ["Oải hương"])
+  repeated string base_notes = 3;   // Hương cuối (VD: ["Gỗ thông", "Hổ phách"])
+  repeated string moods = 4;        // Không gian / Cảm xúc (VD: ["Thư giãn", "Phòng ngủ"])
+}

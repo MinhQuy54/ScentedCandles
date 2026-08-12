@@ -1,0 +1,19 @@
+# gRPC & Protobuf (Tương tác với API Gateway)
+grpcio>=1.62.0
+grpcio-tools>=1.62.0
+protobuf>=4.25.3
+
+# Vector DB & Search Engine
+qdrant-client>=1.8.0
+elasticsearch>=8.12.0
+
+# Async Worker & Cache
+celery>=5.3.6
+redis>=5.0.2
+
+# LLM & AI Processing
+openai>=1.14.0
+# sentence-transformers>=2.5.1  # TODO: Bật lại khi implement Embedding Service (kéo theo PyTorch ~2GB)
+pydantic>=2.6.4
+pydantic-settings>=2.2.1
+python-dotenv>=1.0.1
