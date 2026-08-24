@@ -3,7 +3,7 @@
 > **Dự án:** AuraScent - E-Commerce Nến Thơm Cao Cấp Tích Hợp AI Tư Vấn Mùi Hương Real-time  
 > **Tác giả:** Principal Solutions Architect & Technical Lead  
 > **Phương pháp luận:** BMAD Framework (Business - Method - Architecture - Data)  
-> **Ngày cập nhật:** 11/08/2026  
+> **Ngày cập nhật:** 21/08/2026  
 
 ---
 
@@ -83,13 +83,13 @@ sequenceDiagram
     else Lock Acquired Success
         Redis-->>GW: Lock Acquired True
         GW->>DB: BEGIN TRANSACTION
-        GW->>DB: SELECT stock FROM "Product" WHERE id = {productId} FOR UPDATE
+        GW->>DB: SELECT quantity_on_hand FROM inventory WHERE product_id = {productId} FOR UPDATE
         alt Stock < Quantity
             GW->>DB: ROLLBACK TRANSACTION
             GW->>Redis: Release Lock
             GW-->>Client: 400 Bad Request (Sản phẩm hết hàng)
         else Stock >= Quantity
-            GW->>DB: UPDATE "Product" SET stock = stock - qty WHERE id = {productId}
+            GW->>DB: UPDATE inventory SET quantity_on_hand = quantity_on_hand - qty WHERE product_id = {productId}
             GW->>DB: INSERT INTO "Order" & "OrderItem"
             GW->>DB: COMMIT TRANSACTION
             GW->>Redis: Release Lock
@@ -208,7 +208,7 @@ sequenceDiagram
 |  |   AuthModule   |  | ProductsModule  |  |  OrdersModule  |  | AiClientModule  |  |
 |  +----------------+  +-----------------+  +----------------+  +-----------------+  |
 |         |                     |                   |                    |          |
-|    JWT / Passport       Prisma ORM          Redlock / Prisma      gRPC Client     |
+|    JWT / Passport       TypeORM            Redlock / TypeORM     gRPC Client     |
 +---------|---------------------|-------------------|--------------------|----------+
           |                     |                   |                    |
           |                     v                   v                    | gRPC
@@ -242,7 +242,7 @@ sequenceDiagram
   * Admin APIs: Tạo/Sửa/Xóa sản phẩm, Trigger Re-index metadata.
 * **`OrdersModule`**:
   * Tích hợp `RedlockService` để tạo khóa phân tán theo `product_id`.
-  * Thực thi DB Transaction qua Prisma `$transaction` với isolation level `Serializable` hoặc `SELECT FOR UPDATE`.
+  * Thực thi DB Transaction qua TypeORM `DataSource.transaction()` + `SELECT FOR UPDATE` (QueryRunner).
 * **`AiClientModule`**:
   * Khởi tạo `GrpcClient` kết nối tới `ai-engine:50051`.
   * Expose Endpoint SSE Controller `/api/v1/ai/chat/stream` nhận `Observable<ChatChunk>` từ gRPC và pipe sang client format `MessageEvent`.
@@ -304,114 +304,466 @@ sequenceDiagram
 
 ## 4. D - DATA (Mô hình Dữ liệu & Storage)
 
-### 4.1. PostgreSQL Database Schema (Prisma Data Model)
+### 4.1. PostgreSQL Database Schema (TypeORM Entities)
 
-```prisma
-// packages/prisma/schema.prisma
+> **ORM:** TypeORM + PostgreSQL 16  
+> **Convention:** `snake_case` cho column DB, `camelCase` trong entity TypeScript  
+> **Audit:** Mọi bảng nghiệp vụ kế thừa `created_at`, `updated_at`, `deleted_at` (soft delete)  
+> **Tiền tệ:** `DECIMAL(12, 2)` — không dùng `float`  
+> **ID:** `UUID` (`gen_random_uuid()`)
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+#### 4.1.1. Danh sách bảng & nhóm chức năng
 
-generator client {
-  provider = "prisma-client-js"
-}
+| Nhóm | Bảng | Mô tả |
+| :--- | :--- | :--- |
+| **IAM / RBAC** | `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `refresh_tokens` | Tài khoản, phân quyền chi tiết |
+| **Catalog** | `categories`, `products`, `product_images`, `attribute_definitions`, `product_attributes`, `scent_profiles` | Danh mục, sản phẩm, thuộc tính, hồ sơ mùi hương (AI) |
+| **Inventory** | `inventory`, `inventory_transactions` | Tồn kho tách riêng + audit log (chống over-selling) |
+| **Order** | `orders`, `order_items`, `addresses` | Đơn hàng, chi tiết, địa chỉ giao hàng |
+| **Promotion** | `vouchers`, `voucher_usages` | Mã giảm giá & lịch sử dùng |
+| **CRM** | `contacts` | Liên hệ / hỗ trợ khách hàng |
 
-enum Role {
-  CUSTOMER
-  ADMIN
-}
+```mermaid
+erDiagram
+    users ||--o{ user_roles : has
+    roles ||--o{ user_roles : assigned
+    roles ||--o{ role_permissions : has
+    permissions ||--o{ role_permissions : granted
+    users ||--o{ refresh_tokens : has
+    users ||--o{ addresses : has
+    users ||--o{ orders : places
+    users ||--o{ contacts : submits
+    users ||--o{ voucher_usages : uses
 
-enum OrderStatus {
-  PENDING
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
+    categories ||--o{ products : contains
+    categories ||--o{ categories : parent
 
-enum ProductStatus {
-  DRAFT
-  PROCESSING
-  ACTIVE
-  INACTIVE
-}
+    products ||--o{ product_images : has
+    products ||--o{ product_attributes : has
+    products ||--|| scent_profiles : has
+    products ||--|| inventory : tracks
+    products ||--o{ inventory_transactions : logs
+    products ||--o{ order_items : sold_in
 
-model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  role         Role     @default(CUSTOMER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  orders       Order[]
+    attribute_definitions ||--o{ product_attributes : defines
 
-  @@map("users")
-}
+    orders ||--o{ order_items : contains
+    orders }o--|| vouchers : applies
+    orders ||--o{ voucher_usages : records
+    orders }o--|| addresses : ships_to
 
-model Category {
-  id          String    @id @default(uuid())
-  name        String
-  slug        String    @unique
-  description String?
-  products    Product[]
-
-  @@map("categories")
-}
-
-model Product {
-  id             String        @id @default(uuid())
-  categoryId     String
-  category       Category      @relation(fields: [categoryId], references: [id])
-  name           String
-  slug           String        @unique
-  price          Decimal       @db.Decimal(12, 2)
-  stock          Int           @default(0)
-  rawDescription String        @db.Text
-  imageUrl       String?
-  topNotes       String[]      @default([])
-  middleNotes    String[]      @default([])
-  baseNotes      String[]      @default([])
-  moods          String[]      @default([])
-  status         ProductStatus @default(DRAFT)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  orderItems     OrderItem[]
-
-  @@index([categoryId])
-  @@index([status])
-  @@map("products")
-}
-
-model Order {
-  id              String      @id @default(uuid())
-  userId          String
-  user            User        @relation(fields: [userId], references: [id])
-  totalAmount     Decimal     @db.Decimal(12, 2)
-  status          OrderStatus @default(PENDING)
-  shippingAddress String
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  items           OrderItem[]
-
-  @@index([userId])
-  @@map("orders")
-}
-
-model OrderItem {
-  id        String   @id @default(uuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  quantity  Int
-  unitPrice Decimal  @db.Decimal(12, 2)
-
-  @@map("order_items")
-}
+    vouchers ||--o{ voucher_usages : tracked
 ```
+
+---
+
+#### 4.1.2. Enums
+
+| Enum | Giá trị | Dùng cho |
+| :--- | :--- | :--- |
+| `ProductStatus` | `DRAFT`, `PROCESSING`, `ACTIVE`, `INACTIVE` | `products.status` |
+| `OrderStatus` | `PENDING`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `CANCELLED`, `REFUNDED` | `orders.status` |
+| `PaymentStatus` | `PENDING`, `PAID`, `FAILED`, `REFUNDED` | `orders.payment_status` |
+| `PaymentMethod` | `COD`, `BANK_TRANSFER`, `CARD`, `E_WALLET` | `orders.payment_method` |
+| `VoucherType` | `PERCENT`, `FIXED_AMOUNT` | `vouchers.type` |
+| `VoucherStatus` | `ACTIVE`, `INACTIVE`, `EXPIRED` | `vouchers.status` |
+| `AttributeInputType` | `TEXT`, `NUMBER`, `BOOLEAN`, `SINGLE_SELECT`, `MULTI_SELECT` | `attribute_definitions.input_type` |
+| `AttributeGroup` | `SCENT`, `PHYSICAL`, `MERCHANDISING` | `attribute_definitions.group` |
+| `ExtractionStatus` | `PENDING`, `COMPLETED`, `FAILED` | `scent_profiles.extraction_status` |
+| `InventoryTransactionType` | `ORDER`, `RETURN`, `ADJUSTMENT`, `RESERVE`, `RELEASE` | `inventory_transactions.type` |
+| `ContactType` | `GENERAL`, `SUPPORT`, `PARTNER`, `FEEDBACK` | `contacts.type` |
+| `ContactStatus` | `NEW`, `IN_PROGRESS`, `RESOLVED`, `CLOSED` | `contacts.status` |
+
+---
+
+#### 4.1.3. IAM — Users, Roles & Permissions
+
+##### `users`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `email` | `VARCHAR(255)` | UNIQUE, NOT NULL | Email đăng nhập |
+| `password_hash` | `VARCHAR(255)` | NOT NULL | Bcrypt hash |
+| `full_name` | `VARCHAR(150)` | NOT NULL | |
+| `phone` | `VARCHAR(20)` | NULL | SĐT (tuỳ chọn) |
+| `avatar_url` | `VARCHAR(500)` | NULL | Ảnh đại diện |
+| `is_active` | `BOOLEAN` | DEFAULT `true` | Khóa tài khoản |
+| `email_verified_at` | `TIMESTAMPTZ` | NULL | Xác thực email |
+| `last_login_at` | `TIMESTAMPTZ` | NULL | Lần login cuối |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `deleted_at` | `TIMESTAMPTZ` | NULL | Soft delete |
+
+**Index:** `email`
+
+##### `roles`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `code` | `VARCHAR(50)` | UNIQUE, NOT NULL | `ADMIN`, `CUSTOMER`, `STAFF` |
+| `name` | `VARCHAR(100)` | NOT NULL | Tên hiển thị |
+| `description` | `TEXT` | NULL | |
+| `is_system` | `BOOLEAN` | DEFAULT `false` | Role hệ thống — không xóa |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Seed mặc định:** `ADMIN`, `CUSTOMER`, `STAFF`
+
+##### `permissions`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `code` | `VARCHAR(100)` | UNIQUE, NOT NULL | `products.create`, `orders.read` |
+| `resource` | `VARCHAR(50)` | NOT NULL | `products`, `orders`, `vouchers` |
+| `action` | `VARCHAR(50)` | NOT NULL | `create`, `read`, `update`, `delete` |
+| `description` | `TEXT` | NULL | |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+##### `user_roles` (junction)
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `user_id` | `UUID` | FK → `users.id`, PK | |
+| `role_id` | `UUID` | FK → `roles.id`, PK | |
+| `assigned_at` | `TIMESTAMPTZ` | NOT NULL | Thời điểm gán role |
+
+##### `role_permissions` (junction)
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `role_id` | `UUID` | FK → `roles.id`, PK | |
+| `permission_id` | `UUID` | FK → `permissions.id`, PK | |
+
+##### `refresh_tokens`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `user_id` | `UUID` | FK → `users.id`, NOT NULL | |
+| `token_hash` | `VARCHAR(255)` | NOT NULL | Hash refresh token |
+| `expires_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `revoked_at` | `TIMESTAMPTZ` | NULL | Revoke khi logout |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `user_id`, `token_hash`
+
+---
+
+#### 4.1.4. Catalog — Categories, Products & Attributes
+
+##### `categories`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `parent_id` | `UUID` | FK → `categories.id`, NULL | Danh mục cha (cây) |
+| `name` | `VARCHAR(150)` | NOT NULL | |
+| `slug` | `VARCHAR(150)` | UNIQUE, NOT NULL | URL-friendly |
+| `description` | `TEXT` | NULL | |
+| `image_url` | `VARCHAR(500)` | NULL | Ảnh banner danh mục |
+| `sort_order` | `INT` | DEFAULT `0` | Thứ tự hiển thị |
+| `is_active` | `BOOLEAN` | DEFAULT `true` | |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `deleted_at` | `TIMESTAMPTZ` | NULL | |
+
+**Index:** `parent_id`, `slug`
+
+##### `products`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `category_id` | `UUID` | FK → `categories.id`, NOT NULL | |
+| `sku` | `VARCHAR(50)` | UNIQUE, NOT NULL | Mã SKU nội bộ |
+| `name` | `VARCHAR(255)` | NOT NULL | Tên sản phẩm |
+| `slug` | `VARCHAR(255)` | UNIQUE, NOT NULL | |
+| `short_description` | `VARCHAR(500)` | NULL | Mô tả ngắn (listing) |
+| `raw_description` | `TEXT` | NOT NULL | Mô tả thô — input cho AI extract |
+| `price` | `DECIMAL(12,2)` | NOT NULL | Giá bán |
+| `compare_at_price` | `DECIMAL(12,2)` | NULL | Giá gốc (gạch ngang) |
+| `status` | `ProductStatus` | DEFAULT `DRAFT` | |
+| `is_featured` | `BOOLEAN` | DEFAULT `false` | Nổi bật / homepage |
+| `weight_grams` | `INT` | NULL | Trọng lượng (gram) |
+| `burn_time_hours` | `DECIMAL(5,1)` | NULL | Thời gian cháy (giờ) |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `deleted_at` | `TIMESTAMPTZ` | NULL | |
+
+**Index:** `category_id`, `status`, `sku`, `slug`
+
+> **Lưu ý:** Không lưu `stock` trên `products` — tách sang bảng `inventory`.
+
+##### `product_images`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `product_id` | `UUID` | FK → `products.id`, NOT NULL | |
+| `url` | `VARCHAR(500)` | NOT NULL | URL ảnh (MinIO/S3) |
+| `alt_text` | `VARCHAR(255)` | NULL | SEO / accessibility |
+| `sort_order` | `INT` | DEFAULT `0` | Thứ tự gallery |
+| `is_primary` | `BOOLEAN` | DEFAULT `false` | Ảnh đại diện |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `product_id`
+
+##### `attribute_definitions` (định nghĩa thuộc tính sản phẩm)
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `code` | `VARCHAR(50)` | UNIQUE, NOT NULL | `wax_type`, `jar_color`, `size` |
+| `name` | `VARCHAR(100)` | NOT NULL | Tên hiển thị |
+| `group` | `AttributeGroup` | NOT NULL | `SCENT`, `PHYSICAL`, `MERCHANDISING` |
+| `input_type` | `AttributeInputType` | NOT NULL | Kiểu nhập liệu |
+| `options` | `JSONB` | NULL | Danh sách option cho SELECT |
+| `is_filterable` | `BOOLEAN` | DEFAULT `false` | Hiện trong bộ lọc search |
+| `is_required` | `BOOLEAN` | DEFAULT `false` | Bắt buộc khi tạo SP |
+| `sort_order` | `INT` | DEFAULT `0` | |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Seed gợi ý:** `wax_type`, `jar_color`, `jar_size`, `wick_type`, `is_handmade`
+
+##### `product_attributes` (giá trị thuộc tính theo sản phẩm)
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `product_id` | `UUID` | FK → `products.id`, NOT NULL | |
+| `attribute_definition_id` | `UUID` | FK → `attribute_definitions.id`, NOT NULL | |
+| `value_text` | `VARCHAR(500)` | NULL | Giá trị text / single select |
+| `value_number` | `DECIMAL(12,2)` | NULL | Giá trị số |
+| `value_json` | `JSONB` | NULL | Multi-select hoặc cấu trúc phức |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Unique:** `(product_id, attribute_definition_id)`
+
+##### `scent_profiles` (hồ sơ mùi hương — phục vụ AI Search & Chatbot)
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `product_id` | `UUID` | FK → `products.id`, UNIQUE, NOT NULL | 1 SP = 1 profile |
+| `top_notes` | `TEXT[]` | DEFAULT `{}` | Hương đầu |
+| `middle_notes` | `TEXT[]` | DEFAULT `{}` | Hương giữa |
+| `base_notes` | `TEXT[]` | DEFAULT `{}` | Hương cuối |
+| `moods` | `TEXT[]` | DEFAULT `{}` | Cảm xúc / không gian |
+| `ai_summary` | `TEXT` | NULL | Tóm tắt do LLM sinh (cho embedding) |
+| `extraction_status` | `ExtractionStatus` | DEFAULT `PENDING` | Trạng thái Celery extract |
+| `extracted_at` | `TIMESTAMPTZ` | NULL | |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+> Celery Worker cập nhật bảng này sau khi gọi gRPC `ExtractCandleMetadata`. Dữ liệu đồng bộ sang ES/Qdrant từ đây.
+
+---
+
+#### 4.1.5. Inventory — Tồn kho & Audit
+
+##### `inventory`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `product_id` | `UUID` | FK → `products.id`, UNIQUE, NOT NULL | 1 SP = 1 dòng tồn |
+| `quantity_on_hand` | `INT` | DEFAULT `0`, NOT NULL | Tồn thực tế |
+| `quantity_reserved` | `INT` | DEFAULT `0`, NOT NULL | Đang giữ (checkout) |
+| `low_stock_threshold` | `INT` | DEFAULT `5` | Cảnh báo sắp hết |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Công thức:** `quantity_available = quantity_on_hand - quantity_reserved`
+
+> Checkout flow: `RESERVE` → trừ `on_hand` khi `COMMIT` order, hoặc `RELEASE` khi hủy.
+
+##### `inventory_transactions` (audit log — bắt buộc cho debug over-selling)
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `product_id` | `UUID` | FK → `products.id`, NOT NULL | |
+| `type` | `InventoryTransactionType` | NOT NULL | `ORDER`, `RETURN`, `ADJUSTMENT`, `RESERVE`, `RELEASE` |
+| `quantity_change` | `INT` | NOT NULL | Dương = nhập, âm = xuất |
+| `quantity_after` | `INT` | NOT NULL | Tồn sau giao dịch |
+| `reference_type` | `VARCHAR(50)` | NULL | `order`, `manual` |
+| `reference_id` | `UUID` | NULL | ID đơn hàng / phiếu |
+| `note` | `TEXT` | NULL | Ghi chú admin |
+| `created_by` | `UUID` | FK → `users.id`, NULL | Admin thao tác |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `product_id`, `reference_id`, `created_at`
+
+---
+
+#### 4.1.6. Orders — Đơn hàng
+
+##### `addresses`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `user_id` | `UUID` | FK → `users.id`, NOT NULL | |
+| `label` | `VARCHAR(50)` | NULL | `Nhà`, `Công ty` |
+| `recipient_name` | `VARCHAR(150)` | NOT NULL | |
+| `phone` | `VARCHAR(20)` | NOT NULL | |
+| `address_line_1` | `VARCHAR(255)` | NOT NULL | |
+| `address_line_2` | `VARCHAR(255)` | NULL | |
+| `city` | `VARCHAR(100)` | NOT NULL | Tỉnh/TP |
+| `district` | `VARCHAR(100)` | NULL | Quận/Huyện |
+| `ward` | `VARCHAR(100)` | NULL | Phường/Xã |
+| `postal_code` | `VARCHAR(20)` | NULL | |
+| `is_default` | `BOOLEAN` | DEFAULT `false` | Địa chỉ mặc định |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `deleted_at` | `TIMESTAMPTZ` | NULL | |
+
+**Index:** `user_id`
+
+##### `orders`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `order_number` | `VARCHAR(30)` | UNIQUE, NOT NULL | `ORD-2026-000001` |
+| `user_id` | `UUID` | FK → `users.id`, NOT NULL | |
+| `status` | `OrderStatus` | DEFAULT `PENDING` | |
+| `payment_status` | `PaymentStatus` | DEFAULT `PENDING` | |
+| `payment_method` | `PaymentMethod` | NULL | |
+| `subtotal` | `DECIMAL(12,2)` | NOT NULL | Tổng trước giảm giá |
+| `discount_amount` | `DECIMAL(12,2)` | DEFAULT `0` | Giảm từ voucher |
+| `shipping_fee` | `DECIMAL(12,2)` | DEFAULT `0` | Phí ship |
+| `total_amount` | `DECIMAL(12,2)` | NOT NULL | `subtotal - discount + shipping` |
+| `voucher_id` | `UUID` | FK → `vouchers.id`, NULL | |
+| `shipping_address_id` | `UUID` | FK → `addresses.id`, NULL | Snapshot địa chỉ |
+| `notes` | `TEXT` | NULL | Ghi chú khách |
+| `cancelled_at` | `TIMESTAMPTZ` | NULL | |
+| `paid_at` | `TIMESTAMPTZ` | NULL | |
+| `shipped_at` | `TIMESTAMPTZ` | NULL | |
+| `delivered_at` | `TIMESTAMPTZ` | NULL | |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `user_id`, `order_number`, `status`, `created_at`
+
+##### `order_items`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `order_id` | `UUID` | FK → `orders.id`, ON DELETE CASCADE | |
+| `product_id` | `UUID` | FK → `products.id`, NOT NULL | |
+| `product_name` | `VARCHAR(255)` | NOT NULL | Snapshot tên SP |
+| `product_sku` | `VARCHAR(50)` | NOT NULL | Snapshot SKU |
+| `quantity` | `INT` | NOT NULL, CHECK `> 0` | |
+| `unit_price` | `DECIMAL(12,2)` | NOT NULL | Giá tại thời điểm mua |
+| `line_total` | `DECIMAL(12,2)` | NOT NULL | `quantity × unit_price` |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `order_id`, `product_id`
+
+---
+
+#### 4.1.7. Promotion — Vouchers
+
+##### `vouchers`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `code` | `VARCHAR(50)` | UNIQUE, NOT NULL | `AURASCENT10` |
+| `name` | `VARCHAR(150)` | NOT NULL | Tên chương trình |
+| `description` | `TEXT` | NULL | |
+| `type` | `VoucherType` | NOT NULL | `PERCENT` hoặc `FIXED_AMOUNT` |
+| `value` | `DECIMAL(12,2)` | NOT NULL | % hoặc số tiền |
+| `max_discount_amount` | `DECIMAL(12,2)` | NULL | Giới hạn giảm (cho PERCENT) |
+| `min_order_amount` | `DECIMAL(12,2)` | NULL | Đơn tối thiểu |
+| `usage_limit` | `INT` | NULL | Tổng lượt dùng toàn hệ thống |
+| `usage_limit_per_user` | `INT` | NULL | Lượt dùng / user |
+| `used_count` | `INT` | DEFAULT `0` | Đã dùng |
+| `valid_from` | `TIMESTAMPTZ` | NOT NULL | |
+| `valid_to` | `TIMESTAMPTZ` | NOT NULL | |
+| `status` | `VoucherStatus` | DEFAULT `ACTIVE` | |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `code`, `status`, `valid_from`, `valid_to`
+
+##### `voucher_usages`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `voucher_id` | `UUID` | FK → `vouchers.id`, NOT NULL | |
+| `user_id` | `UUID` | FK → `users.id`, NOT NULL | |
+| `order_id` | `UUID` | FK → `orders.id`, UNIQUE, NOT NULL | 1 voucher / đơn |
+| `discount_amount` | `DECIMAL(12,2)` | NOT NULL | Số tiền thực giảm |
+| `used_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `voucher_id`, `user_id`
+
+---
+
+#### 4.1.8. CRM — Contacts
+
+##### `contacts`
+
+| Field | Type | Constraints | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | PK | |
+| `user_id` | `UUID` | FK → `users.id`, NULL | NULL = guest |
+| `full_name` | `VARCHAR(150)` | NOT NULL | |
+| `email` | `VARCHAR(255)` | NOT NULL | |
+| `phone` | `VARCHAR(20)` | NULL | |
+| `subject` | `VARCHAR(255)` | NOT NULL | |
+| `message` | `TEXT` | NOT NULL | |
+| `type` | `ContactType` | DEFAULT `GENERAL` | |
+| `status` | `ContactStatus` | DEFAULT `NEW` | |
+| `assigned_to` | `UUID` | FK → `users.id`, NULL | Admin xử lý |
+| `replied_at` | `TIMESTAMPTZ` | NULL | |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | |
+
+**Index:** `status`, `user_id`, `created_at`
+
+---
+
+#### 4.1.9. Gợi ý triển khai TypeORM (thứ tự migration)
+
+```
+Migration 1 — IAM:        roles, permissions, role_permissions, users, user_roles, refresh_tokens
+Migration 2 — Catalog:    categories, products, product_images, attribute_definitions, product_attributes, scent_profiles
+Migration 3 — Inventory:  inventory, inventory_transactions
+Migration 4 — Order:      addresses, vouchers, orders, order_items, voucher_usages
+Migration 5 — CRM:        contacts
+Migration 6 — Seed:       roles, permissions, attribute_definitions
+```
+
+#### 4.1.10. Mapping sang TypeORM Entity (tham chiếu nhanh)
+
+| Bảng DB | Entity file |
+| :--- | :--- |
+| `users` | `src/entities/user.entity.ts` |
+| `roles` | `src/entities/role.entity.ts` |
+| `permissions` | `src/entities/permission.entity.ts` |
+| `categories` | `src/entities/category.entity.ts` |
+| `products` | `src/entities/product.entity.ts` |
+| `product_images` | `src/entities/product-image.entity.ts` |
+| `attribute_definitions` | `src/entities/attribute-definition.entity.ts` |
+| `product_attributes` | `src/entities/product-attribute.entity.ts` |
+| `scent_profiles` | `src/entities/scent-profile.entity.ts` |
+| `inventory` | `src/entities/inventory.entity.ts` |
+| `inventory_transactions` | `src/entities/inventory-transaction.entity.ts` |
+| `addresses` | `src/entities/address.entity.ts` |
+| `orders` | `src/entities/order.entity.ts` |
+| `order_items` | `src/entities/order-item.entity.ts` |
+| `vouchers` | `src/entities/voucher.entity.ts` |
+| `voucher_usages` | `src/entities/voucher-usage.entity.ts` |
+| `contacts` | `src/entities/contact.entity.ts` |
 
 ---
 
@@ -491,7 +843,7 @@ model OrderItem {
 
 Sử dụng **Transactional Outbox Pattern / Event-Driven Sync** qua Celery Queue:
 1. Khi Product thay đổi trạng thái sang `ACTIVE` trên PostgreSQL $\rightarrow$ Phát sinh Event/Task `sync_product_to_search_engine(product_id)`.
-2. Celery Worker đọc thông tin đầy đủ của Product từ PostgreSQL.
+2. Celery Worker đọc `products` + `scent_profiles` từ PostgreSQL.
 3. Ghép chuỗi văn bản đại diện ngữ nghĩa:
    `text = f"{name}. Tầng hương đầu: {top_notes}. Tầng hương giữa: {middle_notes}. Tầng hương cuối: {base_notes}. Cảm xúc: {moods}. Mô tả: {raw_description}"`
 4. Gọi Embedding Model để tạo vector từ `text`.
@@ -511,7 +863,7 @@ Dưới đây là Roadmap chi tiết các việc cần làm để khởi tạo v
 - [ ] **Task 1.2:** Cấu hình `docker-compose.yml` chạy đủ các dịch vụ hạ tầng: PostgreSQL, Redis, Qdrant, Elasticsearch.
 - [ ] **Task 1.3:** Đăng ký file Protobuf `packages/scented-candles.proto` cho 3 gRPC method (`StreamAIChat`, `SmartSearch`, `ExtractCandleMetadata`).
 - [ ] **Task 1.4:** Thiết lập scripts tự động compile Protobuf thành TypeScript code (cho NestJS) và Python code (cho AI Engine).
-- [ ] **Task 1.5:** Khởi tạo Prisma Schema trong NestJS API Gateway & thực thi DB Migration đầu tiên trên PostgreSQL.
+- [ ] **Task 1.5:** Khởi tạo TypeORM Entities theo schema mục 4.1 & thực thi Migration đầu tiên trên PostgreSQL.
 
 ---
 
@@ -553,5 +905,5 @@ Dưới đây là Roadmap chi tiết các việc cần làm để khởi tạo v
 
 > **📌 HƯỚNG DẪN BẮT ĐẦU CODE NGAY:**
 > 1. Mở terminal tại thư mục gốc dự án: `docker compose up -d postgres redis qdrant elasticsearch`
-> 2. Chạy Migration database: `cd app/api-gateway && npx prisma migrate dev`
+> 2. Chạy Migration database: `cd app/api-gateway && npm run migration:run`
 > 3. Tiến hành thực thi lần lượt các Task trong **PHASE 1** đến **PHASE 4**.
