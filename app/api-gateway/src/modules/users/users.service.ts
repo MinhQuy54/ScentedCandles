@@ -13,7 +13,10 @@ export class UsersService {
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepo.findOne({ where: { email } });
+    return this.userRepo.findOne({
+      where: {email},
+      relations: {roleSetting: true}
+    })
   }
 
   async findById(id: string): Promise<User | null> {
