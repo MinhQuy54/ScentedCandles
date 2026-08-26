@@ -14,6 +14,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/core/auth/guards/jwt-auth.guard';
+import { CategoryModule } from './modules/category/category.module';
+import { ProductImagesModule } from './modules/product-images/product-images.module';
 
 @Module({
   imports: [ProductsModule, UsersModule, RolesModule, PermissionsModule, UserRolesModule, RolePermissionsModule, RefreshTokensModule, AuthModule,
@@ -48,6 +50,8 @@ import { JwtAuthGuard } from './modules/core/auth/guards/jwt-auth.guard';
         };
       },
     }),
+    CategoryModule,
+    ProductImagesModule,
   ],
   controllers: [AppController],
   providers: [AppService,

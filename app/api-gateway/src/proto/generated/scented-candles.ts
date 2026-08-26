@@ -77,18 +77,11 @@ export interface ScentedCandlesAIServiceClient {
   extractCandleMetadata(request: ExtractRequest): Observable<ExtractResponse>;
 }
 
-/** Service xử lý toàn bộ logic AI & Search nội bộ */
-
 export interface ScentedCandlesAIServiceController {
-  /** 1. Chatbot Tư Vấn (Server Streaming RPC): Trả về từng đoạn chữ real-time (hiệu ứng typing) */
-
+  
   streamAiChat(request: ChatRequest): Observable<ChatChunk>;
 
-  /** 2. Hybrid Search (Simple RPC): Kết hợp Full-text (Elasticsearch) + Vector (Qdrant) */
-
   smartSearch(request: SearchQuery): Promise<SearchResponse> | Observable<SearchResponse> | SearchResponse;
-
-  /** 3. Metadata Extraction (Simple RPC): Bóc tách thuộc tính nến thơm khi Admin tạo sản phẩm */
 
   extractCandleMetadata(
     request: ExtractRequest,
