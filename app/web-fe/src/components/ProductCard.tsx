@@ -21,13 +21,14 @@ export function ProductCard({ product }: { product: Product }) {
               <span className="badge bg-danger mb-2">-{percent}%</span>
             )}
             <div
-              style={{ height: '180px', width: '100%' }}
-              className="d-flex align-items-center justify-content-center mb-4"
+              style={{ height: '300px', width: '100%' }}
+              className="d-flex align-items-center justify-content-center "
             >
               <img
                 src={primaryImage(product)}
                 className="img-fluid"
                 style={{
+                  maxWidth: '250px',
                   maxHeight: '100%',
                   width: 'auto',
                   objectFit: 'contain',
