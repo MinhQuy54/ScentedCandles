@@ -41,6 +41,7 @@ export function CatalogPage() {
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
+      {/* <h3 className="mb-4 text-center">Tự hào là đối tác sản xuất quà tặng cho các doanh nghiệp</h3> */}
     </section>
   )
 }

@@ -1,12 +1,19 @@
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
 import logo2 from './assets/logo2.png'
 import { CatalogPage } from './page/CatalogPage'
 import { ProductPage } from './page/ProductPage'
+import { AboutPage } from './page/AboutPage'
+import { Footer } from './components/Footer'
 
-export default function App() {
+function AppShell() {
+  const { pathname } = useLocation()
+
   return (
-    <BrowserRouter>
-      <div className="text-white text-center py-1 small" style={{ background: '#a8383a', fontSize: '14px' }}>
+    <>
+      <div
+        className="text-white text-center py-1 small"
+        style={{ background: '#a8383a', fontSize: '14px' }}
+      >
         Miễn phí vận chuyển với đơn hàng trên 990.000đ
       </div>
       <nav className="navbar navbar-expand-lg bg-white border-bottom site-navbar">
@@ -15,14 +22,33 @@ export default function App() {
             <img src={logo2} alt="AuraScent" />
           </Link>
           <div className="d-none d-lg-flex align-self-stretch align-items-stretch gap-4 mx-auto">
-            <Link className="nav-link" to="/">Nến thơm</Link>
-            <Link className="nav-link" to="/">Tinh dầu</Link>
-            <Link className="nav-link" to="/">Set quà</Link>
-            <Link className="nav-link" to="/">Set quà 2  nến</Link>
-            <Link className="nav-link" to="/">Set quà 3 nến </Link>
-            <Link className="nav-link" to="/">Phiên bản "mini"</Link>
-            <Link className="nav-link" to="/">Phụ kiện</Link>
-            <Link className="nav-link" to="/">Giới thiệu</Link>
+            <Link className="nav-link" to="/">
+              Nến thơm
+            </Link>
+            <Link className="nav-link" to="/">
+              Tinh dầu
+            </Link>
+            <Link className="nav-link" to="/">
+              Set quà
+            </Link>
+            <Link className="nav-link" to="/">
+              Set quà 2 nến
+            </Link>
+            <Link className="nav-link" to="/">
+              Set quà 3 nến
+            </Link>
+            <Link className="nav-link" to="/">
+              Phiên bản &quot;mini&quot;
+            </Link>
+            <Link className="nav-link" to="/">
+              Phụ kiện
+            </Link>
+            <Link
+              className={`nav-link${pathname === '/about' ? ' active' : ''}`}
+              to="/about"
+            >
+              Giới thiệu
+            </Link>
           </div>
           <div className="d-flex gap-3 align-items-center">
             <span>0</span>
@@ -33,8 +59,18 @@ export default function App() {
         <Routes>
           <Route path="/" element={<CatalogPage />} />
           <Route path="/products/:id" element={<ProductPage />} />
+          <Route path="/about" element={<AboutPage />} />
         </Routes>
       </main>
+      <Footer />
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
     </BrowserRouter>
   )
 }
