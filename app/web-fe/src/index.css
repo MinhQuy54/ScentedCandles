@@ -611,3 +611,156 @@ code {
 .cart-icon:hover .cart-number-red {
   transform: translateY(0);
 }
+
+.auth-page {
+  min-height: 60vh;
+  background:
+    linear-gradient(180deg, #faf7f5 0%, #fff 42%, #fff 100%);
+}
+
+.auth-card {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 2.5rem;
+}
+
+.auth-heading {
+  font-size: 28px !important;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #111;
+  margin: 0 0 0.5rem !important;
+  text-align: center;
+}
+
+.auth-lead {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 1.5rem;
+}
+
+.auth-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.35rem;
+}
+
+.auth-input {
+  border-radius: 4px;
+  border-color: #ddd;
+  padding: 0.7rem 0.85rem;
+  font-size: 15px;
+  color: #222;
+  background: #fff;
+}
+
+.auth-input:focus {
+  border-color: #a8383a;
+  box-shadow: 0 0 0 0.2rem rgba(168, 56, 58, 0.15);
+}
+
+.auth-submit {
+  background: #a8383a;
+  border: 1px solid #a8383a;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+}
+
+.auth-submit:hover:not(:disabled),
+.auth-submit:focus-visible:not(:disabled) {
+  background: #8f2e30;
+  border-color: #8f2e30;
+  color: #fff;
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-alert {
+  font-size: 14px;
+  padding: 0.65rem 0.85rem;
+}
+
+.auth-footer-text {
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.auth-link {
+  color: #a8383a;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  color: #8f2e30;
+  text-decoration: underline;
+}
+
+.account-card {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 2.5rem;
+}
+
+.account-dl {
+  margin: 0 0 1.75rem;
+}
+
+.account-dl-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.5rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.account-dl-row dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
+.account-dl-row dd {
+  margin: 0;
+  font-size: 15px;
+  color: #222;
+  word-break: break-word;
+}
+
+.nav-popover-user {
+  padding: 10px 4px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 4px;
+}
+
+.nav-popover-action {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 4px;
+  border: none;
+  border-bottom: none;
+  background: transparent;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.nav-popover-action:hover {
+  color: #a8383a;
+}
