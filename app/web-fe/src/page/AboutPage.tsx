@@ -1,13 +1,13 @@
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 
 const pageLinks = [
-  { to: '/', label: 'Tất cả nến thơm' },
-  { to: '/', label: 'Tinh dầu' },
-  { to: '/', label: 'Set quà tặng' },
-  { to: '/', label: 'Set quà 2 nến' },
-  { to: '/', label: 'Set quà 3 nến' },
-  { to: '/', label: 'Phụ kiện' },
-]
+  { to: "/", label: "Tất cả nến thơm" },
+  { to: "/", label: "Tinh dầu" },
+  { to: "/", label: "Set quà tặng" },
+  { to: "/", label: "Set quà 2 nến" },
+  { to: "/", label: "Set quà 3 nến" },
+  { to: "/", label: "Phụ kiện" },
+];
 
 export function AboutPage() {
   return (
@@ -44,7 +44,6 @@ export function AboutPage() {
                 sống đang ngày càng trở nên phổ biến.
               </strong>
             </p>
-
             <p>
               <strong>AuraScent</strong> chuyên nến thơm và tinh dầu cao cấp,
               mang đến những giải pháp mùi hương tinh tế giúp nâng tầm không
@@ -71,24 +70,20 @@ export function AboutPage() {
             <p>
               <strong>
                 <em>Life is Better when you smell Nice</em>
-              </strong>{' '}
+              </strong>{" "}
               — chúng tôi tin rằng một làn hương phù hợp giúp bạn thư giãn và
               tận hưởng cuộc sống trọn vẹn hơn mỗi ngày.
             </p>
 
             <ul>
               <li>
-                Facebook:{' '}
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                Facebook:{" "}
+                <a href="https://facebook.com" target="_blank" rel="noreferrer">
                   https://facebook.com
                 </a>
               </li>
               <li>
-                Instagram:{' '}
+                Instagram:{" "}
                 <a
                   href="https://instagram.com"
                   target="_blank"
@@ -98,14 +93,13 @@ export function AboutPage() {
                 </a>
               </li>
               <li>
-                Shopee:{' '}
+                Shopee:{" "}
                 <a href="https://shopee.vn" target="_blank" rel="noreferrer">
                   https://shopee.vn
                 </a>
               </li>
               <li>
-                Hotline:{' '}
-                <a href="tel:0325367066">0325.367.066</a>
+                Hotline: <a href="tel:0325367066">0325.367.066</a>
               </li>
               <li>
                 Showroom:
@@ -117,7 +111,7 @@ export function AboutPage() {
                 </ul>
               </li>
               <li>
-                Email:{' '}
+                Email:{" "}
                 <a href="mailto:accpesquy1245@gmail.com">
                   accpesquy1245@gmail.com
                 </a>
@@ -127,5 +121,5 @@ export function AboutPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
