@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { notification } from 'antd'
 import { login, saveAuthTokens } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
+import { PasswordInput } from '../components/PasswordInput'
 
 type LocationState = {
   email?: string
@@ -79,20 +80,24 @@ export function LoginPage() {
               />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3">
               <label htmlFor="login-password" className="form-label auth-label">
                 Mật khẩu
               </label>
-              <input
+              <PasswordInput
                 id="login-password"
-                type="password"
-                className="form-control auth-input"
                 autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
                 required
                 disabled={loading}
               />
+            </div>
+
+            <div className="auth-forgot mb-4">
+              <Link to="/forgot-password" className="auth-link">
+                Quên mật khẩu?
+              </Link>
             </div>
 
             <button

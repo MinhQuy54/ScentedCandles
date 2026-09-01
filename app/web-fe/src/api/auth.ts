@@ -74,3 +74,15 @@ export async function getMe() {
   if (!res.ok) throw new Error(json.message ?? "FETCH_FAILED");
   return json as ApiResponse<AuthUser & { phone?: string; isActive: boolean }>;
 }
+
+export async function forgotPassword(email: string) {
+  return authRequest<null>("/auth/forgot-password", { email });
+}
+
+export async function resetPassword(payload: {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  return authRequest<null>("/auth/reset-password", payload);
+}

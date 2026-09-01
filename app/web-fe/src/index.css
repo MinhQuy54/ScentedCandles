@@ -661,6 +661,40 @@ code {
   box-shadow: 0 0 0 0.2rem rgba(168, 56, 58, 0.15);
 }
 
+.auth-password-field {
+  position: relative;
+}
+
+.auth-password-field .auth-input {
+  padding-right: 2.75rem;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.65rem;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: #888;
+  padding: 0;
+  line-height: 1;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-password-toggle:hover:not(:disabled) {
+  color: #a8383a;
+}
+
+.auth-password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .auth-submit {
   background: #a8383a;
   border: 1px solid #a8383a;
@@ -704,6 +738,11 @@ code {
 .auth-link:hover {
   color: #8f2e30;
   text-decoration: underline;
+}
+
+.auth-forgot {
+  text-align: right;
+  font-size: 13px;
 }
 
 .account-card {

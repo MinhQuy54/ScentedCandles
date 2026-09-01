@@ -9,12 +9,15 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { jwtConfig } from 'src/common/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 
 @Module({
   imports: [
     UsersModule,
     DynamicRbacModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    TypeOrmModule.forFeature([PasswordResetToken]),
     JwtModule.register({
       secret: jwtConfig.secret,
       signOptions: {

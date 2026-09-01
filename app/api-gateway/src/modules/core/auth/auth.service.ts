@@ -1,5 +1,9 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
 import { UsersService } from '../../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { IResponse } from 'src/common/interfaces/response.interface';
@@ -9,8 +13,13 @@ import { User } from '../../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 import { JwtService } from '@nestjs/jwt';
-import { jwtConfig } from 'src/common/config';
+import { appConfig, jwtConfig } from 'src/common/config';
 import { RefreshDto } from './dto/refresh.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { createHash, randomBytes } from 'crypto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 export interface RegisterResponseData {
   id: string;
@@ -41,12 +50,17 @@ export interface MeResponseData {
 @Injectable()
 export class AuthService {
   constructor(
+    @InjectRepository(PasswordResetToken)
+    private readonly resetTokenRepo: Repository<PasswordResetToken>,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly dynamicRbacService: DynamicRbacService,
     private readonly dataSource: DataSource,
   ) {}
 
+  private hashToken(raw: string): string {
+    return createHash('sha256').update(raw).digest('hex');
+  }
 
   async register(dto: RegisterDto): Promise<IResponse<RegisterResponseData>> {
     if (dto.password !== dto.confirmPassword) {
@@ -58,9 +72,8 @@ export class AuthService {
       throw new BadRequestException('EMAIL_ALREADY_EXISTS');
     }
 
-    const customerRole = await this.dynamicRbacService.findRoleSettingByCode(
-      'CUSTOMER',
-    );
+    const customerRole =
+      await this.dynamicRbacService.findRoleSettingByCode('CUSTOMER');
     if (!customerRole?.id) {
       throw new BadRequestException('ROLE_NOT_CONFIGURED');
     }
@@ -117,9 +130,9 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, {
       secret: jwtConfig.refreshSecret,
-      expiresIn: jwtConfig.accessTokenExpiresRefreshInLogin as any
+      expiresIn: jwtConfig.accessTokenExpiresRefreshInLogin as any,
     });
-    
+
     return {
       code: 200,
       success: true,
@@ -142,7 +155,7 @@ export class AuthService {
     if (!user || !user.isActive) {
       throw new UnauthorizedException('USER_NOT_FOUND');
     }
-  
+
     return {
       code: 200,
       success: true,
@@ -158,11 +171,11 @@ export class AuthService {
     };
   }
 
-  async refresh(dto: RefreshDto): Promise<IResponse<{ accessToken: string}>> { 
+  async refresh(dto: RefreshDto): Promise<IResponse<{ accessToken: string }>> {
     try {
       const payload = this.jwtService.verify<JwtPayload>(dto.refreshToken, {
         secret: jwtConfig.refreshSecret,
-      })
+      });
 
       const user = await this.usersService.findById(payload.sub);
       if (!user || !user.isActive) {
@@ -174,7 +187,7 @@ export class AuthService {
         sub: user.id,
         email: user.email,
         role: roleCode ? [roleCode] : [],
-      }
+      };
 
       const accessToken = this.jwtService.sign(newPayload);
       return {
@@ -183,10 +196,79 @@ export class AuthService {
         message: 'ACCESS_TOKEN_REFRESHED',
         data: { accessToken },
       };
-      
     } catch (error) {
       throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
     }
   }
 
+  async forgotPassword(dto: ForgotPasswordDto): Promise<IResponse<null>> {
+    const user = await this.usersService.findByEmail(dto.email);
+
+    if (user?.isActive) {
+      const rawToken = randomBytes(32).toString('hex');
+      const tokenHash = this.hashToken(rawToken);
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+      await this.resetTokenRepo.save({
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      });
+
+      const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+      const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+
+      if (!appConfig.isProduction) {
+        console.log('[ForgotPassword] Reset link:', resetUrl);
+      }
+    }
+
+    return {
+      code: 200,
+      success: true,
+      message: 'RESET_EMAIL_SENT_IF_EXISTS',
+      data: null,
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<IResponse<null>> {
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('PASSWORD_NO_MATCH');
+    }
+
+    const tokenHash = this.hashToken(dto.token);
+    const now = new Date();
+
+    const row = await this.resetTokenRepo.findOne({
+      where: {
+        tokenHash,
+        usedAt: IsNull(),
+        expiresAt: MoreThan(now),
+      },
+    });
+
+    if (!row) {
+      throw new BadRequestException('INVALID_OR_EXPIRED_TOKEN');
+    }
+
+    const user = await this.usersService.findById(row.userId);
+    if (!user || !user.isActive) {
+      throw new BadRequestException('INVALID_OR_EXPIRED_TOKEN');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(User).update(user.id, { passwordHash });
+      await manager.getRepository(PasswordResetToken).update(row.id, {
+        usedAt: now,
+      });
+    });
+
+    return {
+      code: 200,
+      success: true,
+      message: 'PASSWORD_RESET_SUCCESS',
+      data: null,
+    };
+  }
 }
