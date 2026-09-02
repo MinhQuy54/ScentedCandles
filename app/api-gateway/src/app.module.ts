@@ -16,6 +16,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/core/auth/guards/jwt-auth.guard';
 import { CategoryModule } from './modules/category/category.module';
 import { ProductImagesModule } from './modules/product-images/product-images.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { UploadModule } from './modules/uploads/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -55,6 +56,7 @@ import { join } from 'path';
     }),
     CategoryModule,
     ProductImagesModule,
+    AdminModule,
     UploadModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),

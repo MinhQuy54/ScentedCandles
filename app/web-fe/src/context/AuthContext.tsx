@@ -5,67 +5,68 @@ import {
   useEffect,
   useState,
   type ReactNode,
-} from 'react'
-import { clearAuthTokens, getAccessToken, getMe } from '../api/auth'
-import type { AuthUser } from '../api/types'
+} from "react";
+import { clearAuthTokens, getAccessToken, getMe } from "../api/auth";
+import type { AuthUser } from "../api/types";
 
 type AuthContextValue = {
-  user: AuthUser | null
-  loading: boolean
-  setUser: (user: AuthUser | null) => void
-  logout: () => void
-  refreshUser: () => Promise<void>
-}
+  user: AuthUser | null;
+  loading: boolean;
+  setUser: (user: AuthUser | null) => void;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
+};
 
-const AuthContext = createContext<AuthContextValue | null>(null)
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    const token = getAccessToken()
+    const token = getAccessToken();
     if (!token) {
-      setUser(null)
-      return
+      setUser(null);
+      return;
     }
 
     try {
-      const res = await getMe()
+      const res = await getMe();
       setUser({
         id: res.data.id,
         email: res.data.email,
+        phone: res.data.phone,
         fullName: res.data.fullName,
         role: res.data.role,
-      })
+      });
     } catch {
-      clearAuthTokens()
-      setUser(null)
+      clearAuthTokens();
+      setUser(null);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function bootstrap() {
-      setLoading(true)
+      setLoading(true);
       try {
-        if (!cancelled) await refreshUser()
+        if (!cancelled) await refreshUser();
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
     }
 
-    void bootstrap()
+    void bootstrap();
     return () => {
-      cancelled = true
-    }
-  }, [refreshUser])
+      cancelled = true;
+    };
+  }, [refreshUser]);
 
   const logout = useCallback(() => {
-    clearAuthTokens()
-    setUser(null)
-  }, [])
+    clearAuthTokens();
+    setUser(null);
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -73,13 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
+  const ctx = useContext(AuthContext);
   if (!ctx) {
-    throw new Error('useAuth must be used within AuthProvider')
+    throw new Error("useAuth must be used within AuthProvider");
   }
-  return ctx
+  return ctx;
 }

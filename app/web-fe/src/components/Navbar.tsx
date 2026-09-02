@@ -11,7 +11,6 @@ const navLinks = [
   { to: "/", label: "Tinh dầu" },
   { to: "/", label: "Set quà" },
   { to: "/", label: "Set quà 2 nến" },
-  { to: "/", label: "Set quà 3 nến" },
   { to: "/", label: 'Phiên bản "mini"' },
   { to: "/", label: "Phụ kiện" },
   { to: "/about", label: "Giới thiệu" },

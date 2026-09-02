@@ -22,8 +22,8 @@ import { memoryStorage } from 'multer';
 import { UserRole } from 'src/common/constants';
 import { Role } from '../core/auth/decorators/role.decorator';
 import { RoleGuard } from '../core/auth/guards/role.guard';
-import { CreateProductImageDto } from './dto/create-product-image.dto';
-import { ProductImagesService } from './product-images.service';
+import { CreateProductImageDto } from '../product-images/dto/create-product-image.dto';
+import { ProductImagesService } from '../product-images/product-images.service';
 
 @ApiTags('admin-product-images')
 @ApiBearerAuth()
@@ -34,7 +34,9 @@ export class AdminProductImagesController {
   constructor(private readonly productImagesService: ProductImagesService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Upload file and attach to product (admin, 1 step)' })
+  @ApiOperation({
+    summary: 'Upload file and attach to product (admin, 1 step)',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

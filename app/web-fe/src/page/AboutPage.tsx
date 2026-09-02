@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
+import logo from "../assets/logo.png";
 
 const pageLinks = [
   { to: "/", label: "Tất cả nến thơm" },
   { to: "/", label: "Tinh dầu" },
   { to: "/", label: "Set quà tặng" },
   { to: "/", label: "Set quà 2 nến" },
-  { to: "/", label: "Set quà 3 nến" },
   { to: "/", label: "Phụ kiện" },
 ];
 
@@ -24,6 +24,9 @@ export function AboutPage() {
         <div className="row g-4">
           <aside className="col-12 col-md-3">
             <div className="about-sidebar">
+              <div className="about-logo-wrap">
+                <img src={logo} alt="AuraScent" className="about-logo" />
+              </div>
               <h6 className="about-sidebar-title">DANH MỤC TRANG</h6>
               <ul className="list-unstyled about-sidebar-list">
                 {pageLinks.map((item) => (

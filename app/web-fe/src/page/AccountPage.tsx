@@ -1,22 +1,22 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { notification } from 'antd'
-import { useAuth } from '../context/AuthContext'
+import { Link, useNavigate } from "react-router-dom";
+import { notification } from "antd";
+import { useAuth } from "../context/AuthContext";
 
 export function AccountPage() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  if (!user) return null
+  if (!user) return null;
 
   function handleLogout() {
-    logout()
+    logout();
     notification.success({
-      message: 'Đã đăng xuất',
-      description: 'Hẹn gặp lại bạn tại AuraScent!',
-      placement: 'topRight',
+      message: "Đã đăng xuất",
+      description: "Hẹn gặp lại bạn tại AuraScent!",
+      placement: "topRight",
       duration: 3,
-    })
-    navigate('/')
+    });
+    navigate("/");
   }
 
   return (
@@ -44,8 +44,12 @@ export function AccountPage() {
               <dd>{user.email}</dd>
             </div>
             <div className="account-dl-row">
+              <dt>Số điện thoại</dt>
+              <dd>{user.phone}</dd>
+            </div>
+            <div className="account-dl-row">
               <dt>Vai trò</dt>
-              <dd>{user.role ?? 'CUSTOMER'}</dd>
+              <dd>{user.role ?? "CUSTOMER"}</dd>
             </div>
           </dl>
 
@@ -59,5 +63,5 @@ export function AccountPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
