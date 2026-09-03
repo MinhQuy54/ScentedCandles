@@ -1,31 +1,34 @@
-import { useCallback, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import logo2 from "../assets/logo2.png";
 import { NavSearch } from "./navbar/NavSearch";
 import { NavAccount } from "./navbar/NavAccount";
 import { NavCart } from "./navbar/NavCart";
-
-const navLinks = [
-  { to: "/", label: "Nến thơm" },
-  { to: "/", label: "Tinh dầu" },
-  { to: "/", label: "Set quà" },
-  { to: "/", label: "Set quà 2 nến" },
-  { to: "/", label: 'Phiên bản "mini"' },
-  { to: "/", label: "Phụ kiện" },
-  { to: "/about", label: "Giới thiệu" },
-];
+import { fetchCategories } from "../api/categories";
+import type { ProductCategory } from "../api/types";
 
 type Panel = "search" | "account" | "cart" | null;
 
 export function Navbar() {
-  const { pathname } = useLocation(); // lấy url hiện tại
-  const [panel, setPanel] = useState<Panel>(null); // trạng thái của panel
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
+  const [panel, setPanel] = useState<Panel>(null);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+
+  const activeCategoryId = searchParams.get("categoryId");
+  const isHome = pathname === "/";
 
   const close = useCallback(() => setPanel(null), []);
   const toggle = (next: Panel) => {
     setPanel((cur) => (cur === next ? null : next));
   };
+
+  useEffect(() => {
+    void fetchCategories()
+      .then((res) => setCategories(res.data))
+      .catch(() => setCategories([]));
+  }, []);
 
   return (
     <>
@@ -41,16 +44,30 @@ export function Navbar() {
             <img src={logo2} alt="AuraScent" />
           </Link>
           <div className="d-none d-lg-flex align-self-stretch align-items-stretch gap-4 mx-auto">
-            {navLinks.map((item) => (
+            <Link
+              to="/"
+              className={`nav-link${isHome && !activeCategoryId ? " active" : ""}`}
+              onClick={close}
+            >
+              Tất cả
+            </Link>
+            {categories.map((cat) => (
               <Link
-                key={item.label}
-                className={`nav-link${pathname === item.to && item.to !== "/" ? " active" : ""}`}
-                to={item.to}
+                key={cat.id}
+                to={`/?categoryId=${cat.id}`}
+                className={`nav-link${activeCategoryId === cat.id ? " active" : ""}`}
                 onClick={close}
               >
-                {item.label}
+                {cat.name}
               </Link>
             ))}
+            <Link
+              to="/about"
+              className={`nav-link${pathname === "/about" ? " active" : ""}`}
+              onClick={close}
+            >
+              Giới thiệu
+            </Link>
           </div>
           <div className="d-flex gap-3 align-items-center">
             <NavSearch

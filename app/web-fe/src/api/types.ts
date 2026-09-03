@@ -64,7 +64,7 @@ export interface RegisterData {
 
 export interface CreateProductPayload {
   categoryId: string;
-  sku: string;
+  sku?: string;
   name: string;
   slug: string;
   shortDescription?: string;

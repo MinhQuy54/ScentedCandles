@@ -16,10 +16,12 @@ export class CreateProductDto {
   @IsUUID()
   categoryId: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: 'Optional. Auto-generated when omitted or empty.',
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  sku: string;
+  sku?: string;
 
   @ApiProperty()
   @IsString()

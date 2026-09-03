@@ -145,7 +145,7 @@ export class ProductsService {
     object.price = String(dto.price);
     object.status = dto.status ?? ProductStatus.DRAFT;
     object.isFeatured = dto.isFeatured ?? false;
-    object.sku = dto.sku?.trim() ? dto.sku.trim() : await this.initializeSku();
+    object.sku = await this.resolveSku(dto.sku);
     object.slug = await this.ensureUniqueSlug(
       this.slugify(dto.slug?.trim() || dto.name),
     );
@@ -201,7 +201,9 @@ export class ProductsService {
     if (dto.price !== undefined) product.price = String(dto.price);
     if (dto.status !== undefined) product.status = dto.status;
     if (dto.isFeatured !== undefined) product.isFeatured = dto.isFeatured;
-    if (dto.sku !== undefined) product.sku = dto.sku.trim();
+    if (dto.sku !== undefined) {
+      product.sku = await this.resolveSku(dto.sku, id);
+    }
 
     if (dto.slug !== undefined) {
       product.slug = await this.ensureUniqueSlug(this.slugify(dto.slug), id);
@@ -245,6 +247,26 @@ export class ProductsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private async resolveSku(
+    rawSku?: string,
+    excludeId?: string,
+  ): Promise<string> {
+    const trimmed = rawSku?.trim() ?? '';
+    if (!trimmed) {
+      return this.initializeSku();
+    }
+
+    const existing = await this.productRepo.findOne({
+      where: { sku: trimmed },
+      withDeleted: true,
+    });
+    if (existing && existing.id !== excludeId) {
+      throw new BadRequestException('SKU_ALREADY_EXISTS');
+    }
+
+    return trimmed;
   }
 
   private slugify(text: string): string {

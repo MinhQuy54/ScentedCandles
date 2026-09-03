@@ -1192,6 +1192,72 @@ code {
   display: none;
 }
 
+.catalog-page {
+  background: transparent;
+}
+
+.catalog-section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #222;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.65s ease,
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.catalog-section-title.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.catalog-see-more {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: #a8383a;
+  border: 1px solid #a8383a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.65rem 1.75rem;
+  border-radius: 0;
+  transition: color 0.3s ease;
+}
+
+.catalog-see-more::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s ease;
+  z-index: -1;
+}
+
+.catalog-see-more:hover,
+.catalog-see-more:focus-visible {
+  background: #a8383a;
+  border-color: #a8383a;
+  color: #a8383a;
+  text-decoration: none;
+}
+
+.catalog-see-more:hover::before,
+.catalog-see-more:focus-visible::before {
+  transform: scaleX(1);
+}
+
 @media (max-width: 767.98px) {
   .admin-header {
     flex-direction: column;

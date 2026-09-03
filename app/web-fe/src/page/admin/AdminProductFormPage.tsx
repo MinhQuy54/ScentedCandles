@@ -118,7 +118,7 @@ export function AdminProductFormPage() {
       categoryId,
       name: name.trim(),
       slug: slug.trim() || slugify(name.trim()),
-      sku: sku.trim() || "AUTO-SKU",
+      ...(sku.trim() ? { sku: sku.trim() } : {}),
       shortDescription: shortDescription.trim(),
       rawDescription: rawDescription.trim(),
       price: Number(price),

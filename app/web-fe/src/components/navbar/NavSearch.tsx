@@ -1,29 +1,37 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useClickOutsideClose } from './useClickOutsideClose'
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useClickOutsideClose } from "./useClickOutsideClose";
 
 type NavSearchProps = {
-  open: boolean
-  onToggle: () => void
-  onClose: () => void
-}
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+};
 
 export function NavSearch({ open, onToggle, onClose }: NavSearchProps) {
-  const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const rootRef = useClickOutsideClose(open, onClose)
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const rootRef = useClickOutsideClose(open, onClose);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus()
-  }, [open])
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const q = query.trim()
-    onClose()
-    navigate(q ? `/?q=${encodeURIComponent(q)}` : '/')
-  }
+    e.preventDefault();
+    const q = query.trim();
+    onClose();
+
+    const next = new URLSearchParams();
+    const categoryId = searchParams.get("categoryId");
+    if (categoryId) next.set("categoryId", categoryId);
+    if (q) next.set("q", q);
+
+    const qs = next.toString();
+    navigate(qs ? `/?${qs}` : "/");
+  };
 
   return (
     <div className="nav-popover-wrap" ref={rootRef}>
@@ -38,7 +46,7 @@ export function NavSearch({ open, onToggle, onClose }: NavSearchProps) {
       </button>
 
       <div
-        className={`nav-popover nav-popover--search${open ? ' is-open' : ''}`}
+        className={`nav-popover nav-popover--search${open ? " is-open" : ""}`}
         aria-hidden={!open}
       >
         <div className="nav-popover-title">TÌM KIẾM</div>
@@ -63,5 +71,5 @@ export function NavSearch({ open, onToggle, onClose }: NavSearchProps) {
         </form>
       </div>
     </div>
-  )
+  );
 }

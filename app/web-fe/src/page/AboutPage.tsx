@@ -1,15 +1,18 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
-
-const pageLinks = [
-  { to: "/", label: "Tất cả nến thơm" },
-  { to: "/", label: "Tinh dầu" },
-  { to: "/", label: "Set quà tặng" },
-  { to: "/", label: "Set quà 2 nến" },
-  { to: "/", label: "Phụ kiện" },
-];
+import { fetchCategories } from "../api/categories";
+import type { ProductCategory } from "../api/types";
 
 export function AboutPage() {
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+
+  useEffect(() => {
+    void fetchCategories()
+      .then((res) => setCategories(res.data))
+      .catch(() => setCategories([]));
+  }, []);
+
   return (
     <div className="about-page">
       <div className="about-breadcrumb py-2">
@@ -29,9 +32,12 @@ export function AboutPage() {
               </div>
               <h6 className="about-sidebar-title">DANH MỤC TRANG</h6>
               <ul className="list-unstyled about-sidebar-list">
-                {pageLinks.map((item) => (
-                  <li key={item.label}>
-                    <Link to={item.to}>{item.label}</Link>
+                <li>
+                  <Link to="/">Tất cả sản phẩm</Link>
+                </li>
+                {categories.map((cat) => (
+                  <li key={cat.id}>
+                    <Link to={`/?categoryId=${cat.id}`}>{cat.name}</Link>
                   </li>
                 ))}
               </ul>
