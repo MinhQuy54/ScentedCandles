@@ -65,6 +65,13 @@ export function NavAccount({ open, onToggle, onClose }: NavAccountProps) {
                   Tài khoản của tôi
                 </Link>
               </li>
+              {user.role === "ADMIN" && (
+                <li>
+                  <Link to="/admin/products" onClick={onClose}>
+                    Quản trị sản phẩm
+                  </Link>
+                </li>
+              )}
               <li>
                 <button
                   type="button"

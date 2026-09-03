@@ -30,6 +30,7 @@ export interface Product {
   compareAtPrice?: string;
   status: string;
   isFeatured: boolean;
+  deleted_at?: string | null;
   category?: ProductCategory;
   images?: ProductImage[];
 }
@@ -60,3 +61,17 @@ export interface RegisterData {
   email: string;
   fullName: string;
 }
+
+export interface CreateProductPayload {
+  categoryId: string;
+  sku: string;
+  name: string;
+  slug: string;
+  shortDescription?: string;
+  rawDescription: string;
+  price: number;
+  status?: string;
+  isFeatured?: boolean;
+}
+
+export type UpdateProductPayload = Partial<CreateProductPayload>;
