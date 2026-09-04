@@ -1,5 +1,5 @@
 :root {
-  --text: #6b6375;
+  --text: #3a3a3a;
   --text-h: #08060d;
   --bg: #fff;
   --border: #e5e4e7;
@@ -1302,4 +1302,42 @@ code {
 
 .product-card:hover .product-img-secondary {
   opacity: 1;
+}
+
+/* Đổi màu chữ mờ/nhạt sang xám đậm rõ nét */
+.text-muted,
+.text-secondary {
+  color: #333333 !important;
+  font-weight: 500;
+}
+
+/* Rich Text HTML Description Styling */
+.product-description h3,
+.product-description h4,
+.product-description h5,
+.product-description h6 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.product-description ul {
+  margin-bottom: 1rem;
+  list-style-type: disc;
+}
+
+.product-description li {
+  margin-bottom: 0.5rem;
+  line-height: 1.65;
+  color: #333;
+}
+
+.product-description p {
+  margin-bottom: 0.75rem;
+  line-height: 1.65;
+  color: #333;
 }
