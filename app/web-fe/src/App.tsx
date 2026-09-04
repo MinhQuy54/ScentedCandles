@@ -14,6 +14,7 @@ import { ForgotPasswordPage } from "./page/ForgotPasswordPage";
 import { ResetPasswordPage } from "./page/ResetPasswordPage";
 import { AdminProductsPage } from "./page/admin/AdminProductsPage";
 import { AdminProductFormPage } from "./page/admin/AdminProductFormPage";
+import { AdminCategoriesPage } from "./page/admin/AdminCategoriesPage";
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="products/new" element={<AdminProductFormPage />} />
             <Route path="products/:id/edit" element={<AdminProductFormPage />} />
+            <Route path="categories" element={<AdminCategoriesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -16,6 +16,7 @@ export interface ProductCategory {
   id: string;
   name: string;
   slug: string;
+  description: string;
 }
 
 export interface Product {

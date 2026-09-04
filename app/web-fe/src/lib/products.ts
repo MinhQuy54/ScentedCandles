@@ -13,6 +13,13 @@ export function primaryImage(product: Product) {
   return img?.url ?? 'https://placehold.co/600x600?text=AuraScent'
 }
 
+export function secondaryImage(product: Product): string | null {
+  if (!product.images || product.images.length <= 1) return null
+  const primary = product.images.find((i) => i.isPrimary) ?? product.images[0]
+  const secondary = product.images.find((i) => i !== primary) ?? product.images[1]
+  return secondary?.url ?? null
+}
+
 export function discountPercent(product: Product): number | null {
   const price = Number(product.price)
   const compare = Number(product.compareAtPrice)

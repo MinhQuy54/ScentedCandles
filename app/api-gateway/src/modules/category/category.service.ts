@@ -18,8 +18,7 @@ export class CategoryService {
     private readonly categoryRepo: Repository<Category>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
-  ) {}
-
+  ) { }
   findAll() {
     return this.categoryRepo
       .find({
@@ -49,9 +48,7 @@ export class CategoryService {
     return ResponseCommon.ok(category, 'GET_CATEGORY_SUCCESS');
   }
 
-  async create(
-    dto: CreateCategoryDto,
-  ): Promise<ResponseCommon<Category>> {
+  async create(dto: CreateCategoryDto): Promise<ResponseCommon<Category>> {
     if (dto.parentId) {
       await this.assertParentExists(dto.parentId);
     }

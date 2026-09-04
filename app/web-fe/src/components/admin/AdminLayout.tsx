@@ -11,6 +11,11 @@ const NAV_ITEMS = [
     label: "Sản phẩm",
     icon: "bi-box-seam",
   },
+  {
+    to: "/admin/categories",
+    label: "Danh mục",
+    icon: "bi-tags",
+  },
 ] as const;
 
 export function AdminLayout() {
