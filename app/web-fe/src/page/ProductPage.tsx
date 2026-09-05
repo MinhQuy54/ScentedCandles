@@ -284,7 +284,10 @@ export function ProductPage() {
                   </div>
                 )}
               </div>
-              <CandleUsageGuide />
+              <CandleUsageGuide
+                categoryName={product.category?.name}
+                productName={product.name}
+              />
             </div>
           </div>
         </div>

@@ -54,7 +54,7 @@ export class ProductsService {
     const [products, total] = await this.productRepo.findAndCount({
       where,
       relations: { category: true, images: true },
-      order: { created_at: 'DESC' },
+      order: { created_at: 'DESC', images: { sortOrder: 'ASC' } },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -69,6 +69,7 @@ export class ProductsService {
     const product = await this.productRepo.findOne({
       where: { id, status: ProductStatus.ACTIVE },
       relations: { category: true, images: true },
+      order: { images: { sortOrder: 'ASC' } },
     });
 
     if (!product) {
@@ -82,6 +83,7 @@ export class ProductsService {
     const product = await this.productRepo.findOne({
       where: { id },
       relations: { category: true, images: true },
+      order: { images: { sortOrder: 'ASC' } },
       withDeleted: true,
     });
 
@@ -115,7 +117,7 @@ export class ProductsService {
     const [products, total] = await this.productRepo.findAndCount({
       where,
       relations: { category: true, images: true },
-      order: { created_at: 'DESC' },
+      order: { created_at: 'DESC', images: { sortOrder: 'ASC' } },
       skip: (page - 1) * limit,
       take: limit,
       withDeleted: true,

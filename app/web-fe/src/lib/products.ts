@@ -1,4 +1,4 @@
-import type { Product } from '../api/types'
+import type { Product, ProductImage } from '../api/types'
 
 export function formatPrice(price: string | number) {
   return new Intl.NumberFormat('vi-VN', {
@@ -7,16 +7,22 @@ export function formatPrice(price: string | number) {
   }).format(Number(price))
 }
 
+export function getSortedImages(images?: ProductImage[]): ProductImage[] {
+  if (!images || images.length === 0) return []
+  return [...images].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+}
+
 export function primaryImage(product: Product) {
-  const img =
-    product.images?.find((i) => i.isPrimary) ?? product.images?.[0]
+  const images = getSortedImages(product.images)
+  const img = images.find((i) => i.isPrimary) ?? images[0]
   return img?.url ?? 'https://placehold.co/600x600?text=AuraScent'
 }
 
 export function secondaryImage(product: Product): string | null {
-  if (!product.images || product.images.length <= 1) return null
-  const primary = product.images.find((i) => i.isPrimary) ?? product.images[0]
-  const secondary = product.images.find((i) => i !== primary) ?? product.images[1]
+  const images = getSortedImages(product.images)
+  if (images.length <= 1) return null
+  const primary = images.find((i) => i.isPrimary) ?? images[0]
+  const secondary = images.find((i) => i !== primary) ?? images[1]
   return secondary?.url ?? null
 }
 
