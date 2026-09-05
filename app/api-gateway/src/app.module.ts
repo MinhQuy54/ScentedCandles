@@ -20,9 +20,11 @@ import { AdminModule } from './modules/admin/admin.module';
 import { UploadModule } from './modules/uploads/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { CartModule } from './modules/cart/cart.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
-  imports: [ProductsModule, UsersModule, RolesModule, PermissionsModule, UserRolesModule, RolePermissionsModule, RefreshTokensModule, AuthModule,
+  imports: [ProductsModule, UsersModule, RolesModule, PermissionsModule, UserRolesModule, RolePermissionsModule, RefreshTokensModule, AuthModule, RedisModule, CartModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -62,6 +64,7 @@ import { join } from 'path';
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
     }),
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService,
