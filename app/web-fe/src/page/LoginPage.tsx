@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { notification } from 'antd'
 import { login, saveAuthTokens } from '../api/auth'
+import { mergeCartApi } from '../api/cart'
 import { useAuth } from '../context/AuthContext'
 import { PasswordInput } from '../components/PasswordInput'
 
@@ -28,6 +29,21 @@ export function LoginPage() {
     try {
       const res = await login(email.trim(), password)
       saveAuthTokens(res.data.accessToken, res.data.refreshToken)
+
+      // Merge cart guest → user trước khi navigate
+      const sid = localStorage.getItem('aurascent_session_id')
+      console.log('[CartMerge] sid from localStorage:', sid)
+      if (sid) {
+        try {
+          const mergeRes = await mergeCartApi(sid)
+          console.log('[CartMerge] merge result:', mergeRes)
+          localStorage.removeItem('aurascent_session_id')
+        } catch (err) {
+          console.error('[CartMerge] merge failed:', err)
+          // Nếu merge lỗi vẫn tiếp tục login bình thường
+        }
+      }
+
       setUser(res.data.user)
       notification.success({
         message: 'Đăng nhập thành công',

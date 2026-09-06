@@ -9,17 +9,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     super();
   }
 
-  /**
-   * [story-be-production-hardening] Changed: skip JWT when route/class marked @Public(); otherwise require bearer token.
-   */
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
+
     if (isPublic) {
+      try {
+        await (super.canActivate(context) as Promise<boolean>);
+      } catch {
+        // Khách vãng lai chưa có token hoặc token không hợp lệ -> Bỏ qua lỗi 401 cho các route @Public()
+      }
       return true;
     }
-    return super.canActivate(context);
+
+    return super.canActivate(context) as Promise<boolean>;
   }
 }

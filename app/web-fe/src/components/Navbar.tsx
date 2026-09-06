@@ -7,6 +7,7 @@ import { NavAccount } from "./navbar/NavAccount";
 import { NavCart } from "./navbar/NavCart";
 import { fetchCategories } from "../api/categories";
 import type { ProductCategory } from "../api/types";
+import { useCart } from "../context/CartContext";
 
 type Panel = "search" | "account" | "cart" | null;
 
@@ -15,13 +16,24 @@ export function Navbar() {
   const [searchParams] = useSearchParams();
   const [panel, setPanel] = useState<Panel>(null);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const { totalItems, isCartOpen, closeCart, toggleCart } = useCart();
 
   const activeCategoryId = searchParams.get("categoryId");
   const isHome = pathname === "/";
 
-  const close = useCallback(() => setPanel(null), []);
-  const toggle = (next: Panel) => {
+  const close = useCallback(() => {
+    setPanel(null);
+    closeCart();
+  }, [closeCart]);
+
+  const togglePanel = (next: "search" | "account") => {
+    closeCart();
     setPanel((cur) => (cur === next ? null : next));
+  };
+
+  const handleToggleCart = () => {
+    setPanel(null);
+    toggleCart();
   };
 
   useEffect(() => {
@@ -72,19 +84,19 @@ export function Navbar() {
           <div className="d-flex gap-3 align-items-center">
             <NavSearch
               open={panel === "search"}
-              onToggle={() => toggle("search")}
+              onToggle={() => togglePanel("search")}
               onClose={close}
             />
             <NavAccount
               open={panel === "account"}
-              onToggle={() => toggle("account")}
+              onToggle={() => togglePanel("account")}
               onClose={close}
             />
             <NavCart
-              open={panel === "cart"}
-              onToggle={() => toggle("cart")}
-              onClose={close}
-              count={0}
+              open={isCartOpen}
+              onToggle={handleToggleCart}
+              onClose={closeCart}
+              count={totalItems}
             />
           </div>
         </div>

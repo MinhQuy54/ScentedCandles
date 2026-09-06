@@ -9,9 +9,11 @@ import { AboutPage } from "./page/AboutPage";
 import { LoginPage } from "./page/LoginPage";
 import { AccountPage } from "./page/AccountPage";
 import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
 import { RegisterPage } from "./page/RegisterPage";
 import { ForgotPasswordPage } from "./page/ForgotPasswordPage";
 import { ResetPasswordPage } from "./page/ResetPasswordPage";
+import { CartPage } from "./page/CartPage";
 import { AdminProductsPage } from "./page/admin/AdminProductsPage";
 import { AdminProductFormPage } from "./page/admin/AdminProductFormPage";
 import { AdminCategoriesPage } from "./page/admin/AdminCategoriesPage";
@@ -19,42 +21,45 @@ import { AdminCategoriesPage } from "./page/admin/AdminCategoriesPage";
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<CatalogPage />} />
-            <Route path="/products/:id" element={<ProductPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route
-              path="/account"
-              element={
-                <ProtectedRoute>
-                  <AccountPage />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<CatalogPage />} />
+              <Route path="/products/:id" element={<ProductPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route
+                path="/account"
+                element={
+                  <ProtectedRoute>
+                    <AccountPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
 
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }
-          >
-            <Route index element={<Navigate to="products" replace />} />
-            <Route path="products" element={<AdminProductsPage />} />
-            <Route path="products/new" element={<AdminProductFormPage />} />
-            <Route path="products/:id/edit" element={<AdminProductFormPage />} />
-            <Route path="categories" element={<AdminCategoriesPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<Navigate to="products" replace />} />
+              <Route path="products" element={<AdminProductsPage />} />
+              <Route path="products/new" element={<AdminProductFormPage />} />
+              <Route path="products/:id/edit" element={<AdminProductFormPage />} />
+              <Route path="categories" element={<AdminCategoriesPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   );
 }

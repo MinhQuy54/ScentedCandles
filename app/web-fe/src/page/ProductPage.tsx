@@ -3,9 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import { fetchProduct, fetchProducts } from "../api/products";
 import type { Product } from "../api/types";
 import { discountPercent, formatPrice, primaryImage } from "../lib/products";
-import { notification } from "antd";
 import { ProductCard } from "../components/ProductCard";
 import { CandleUsageGuide } from "../components/CandleUsageGuide";
+import { useCart } from "../context/CartContext";
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +15,7 @@ export function ProductPage() {
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     if (!id) return;
@@ -49,12 +50,9 @@ export function ProductPage() {
   }, [id]);
 
   function handleAddToCart() {
-    notification.success({
-      message: "Đã thêm vào giỏ hàng",
-      description: `Đã thêm ${quantity} x ${product?.name} vào giỏ hàng của bạn.`,
-      placement: "topRight",
-      duration: 3,
-    });
+    if (product) {
+      void addToCart(product.id, quantity);
+    }
   }
 
   if (loading) {

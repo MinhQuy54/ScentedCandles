@@ -20,7 +20,7 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   private extractIdentifiers(req: any, sessionIdHeader?: string) {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     const sessionId = sessionIdHeader || req.headers['x-session-id'];
     return { userId, sessionId };
   }
@@ -81,7 +81,7 @@ export class CartController {
 
   @Post('merge')
   mergeCart(@Body() dto: MergeCartDto, @Req() req: any) {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     return this.cartService.mergeCart(dto.guestSessionId, userId);
   }
 }

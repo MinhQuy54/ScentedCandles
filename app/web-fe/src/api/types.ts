@@ -77,3 +77,24 @@ export interface CreateProductPayload {
 }
 
 export type UpdateProductPayload = Partial<CreateProductPayload>;
+
+
+export interface CartItem {
+  productId: string;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    sku: string;
+    price: string;
+    compareAtPrice?: string;
+    primaryImage: string;
+  };
+  lineTotal: number;
+}
+
+export interface Cart {
+  items: CartItem[];
+  totalItems: number;
+  totalPrice: number;
+}

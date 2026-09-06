@@ -37,3 +37,4 @@ export async function deleteAdminCategory(id: string) {
         method: "DELETE",
     });
 }
+
