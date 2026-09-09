@@ -22,9 +22,25 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { CartModule } from './modules/cart/cart.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { AddressModule } from './modules/addresses/address.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
-  imports: [ProductsModule, UsersModule, RolesModule, PermissionsModule, UserRolesModule, RolePermissionsModule, RefreshTokensModule, AuthModule, RedisModule, CartModule,
+  imports: [
+    ProductsModule,
+    UsersModule,
+    RolesModule,
+    PermissionsModule,
+    UserRolesModule,
+    RolePermissionsModule,
+    RefreshTokensModule,
+    AuthModule,
+    RedisModule,
+    CartModule,
+    InventoryModule,
+    AddressModule,
+    OrdersModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

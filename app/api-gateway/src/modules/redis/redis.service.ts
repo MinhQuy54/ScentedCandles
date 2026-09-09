@@ -47,4 +47,31 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     async del(key: string): Promise<number> {
         return this.client.del(key);
     }
+
+    /**
+     * Acquire a distributed lock using SET key value NX PX ttlMs
+     */
+    async acquireLock(key: string, ttlMs: number = 5000): Promise<string | null> {
+        const lockValue = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        const result = await this.client.set(key, lockValue, 'PX', ttlMs, 'NX');
+        if (result === 'OK') {
+            return lockValue;
+        }
+        return null;
+    }
+
+    /**
+     * Release a distributed lock safely using Lua script
+     */
+    async releaseLock(key: string, lockValue: string): Promise<boolean> {
+        const luaScript = `
+            if redis.call("get", KEYS[1]) == ARGV[1] then
+                return redis.call("del", KEYS[1])
+            else
+                return 0
+            end
+        `;
+        const result = await this.client.eval(luaScript, 1, key, lockValue);
+        return result === 1;
+    }
 }
