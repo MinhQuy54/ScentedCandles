@@ -60,7 +60,13 @@ export function CheckoutPage() {
 
   const handleAddNewAddress = async () => {
     if (!recipientName || !phone || !streetAddress || !ward || !district || !city) {
-      setError("Vui lòng nhập đầy đủ thông tin địa chỉ mới.");
+      const msg = "Vui lòng nhập đầy đủ thông tin địa chỉ mới.";
+      setError(msg);
+      notification.error({
+        message: "Thiếu thông tin địa chỉ",
+        description: msg,
+        placement: "topRight",
+      });
       return null;
     }
     try {
@@ -76,16 +82,33 @@ export function CheckoutPage() {
       setAddresses([newAddr, ...addresses]);
       setSelectedAddressId(newAddr.id);
       setShowNewAddressForm(false);
+      notification.success({
+        message: "Thêm địa chỉ thành công",
+        description: "Địa chỉ giao hàng mới đã được ghi nhận.",
+        placement: "topRight",
+      });
       return newAddr.id;
     } catch {
-      setError("Không thể lưu địa chỉ mới.");
+      const msg = "Không thể lưu địa chỉ mới.";
+      setError(msg);
+      notification.error({
+        message: "Lỗi lưu địa chỉ",
+        description: msg,
+        placement: "topRight",
+      });
       return null;
     }
   };
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) {
-      setError("Giỏ hàng của bạn đang trống.");
+      const msg = "Giỏ hàng của bạn đang trống.";
+      setError(msg);
+      notification.warning({
+        message: "Giỏ hàng trống",
+        description: msg,
+        placement: "topRight",
+      });
       return;
     }
 
@@ -110,9 +133,18 @@ export function CheckoutPage() {
 
       const order = await createOrder(payload);
       await clearCart();
+
+
+
       navigate(`/orders?success=true&orderNumber=${order.orderNumber}`);
     } catch (err: any) {
-      setError(err.message || "Đặt hàng thất bại, sản phẩm có thể đã hết hàng.");
+      const errorMsg = err.message || "Đặt hàng thất bại, sản phẩm có thể đã hết hàng.";
+      setError(errorMsg);
+      notification.error({
+        message: "Đặt hàng thất bại",
+        description: errorMsg,
+        placement: "topRight",
+      });
     } finally {
       setLoading(false);
     }

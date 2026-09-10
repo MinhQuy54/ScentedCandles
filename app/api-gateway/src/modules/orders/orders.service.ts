@@ -176,6 +176,7 @@ export class OrdersService {
   async getUserOrders(userId: string): Promise<ResponseCommon<Order[]>> {
     const data = await this.orderRepo.find({
       where: { userId },
+      relations: { items: { product: { images: true } } },
       order: { created_at: 'DESC' },
     });
     return ResponseCommon.ok(data, 'OK');

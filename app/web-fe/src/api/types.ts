@@ -134,6 +134,10 @@ export interface OrderItem {
   unitPrice: string;
   quantity: number;
   totalPrice: string;
+  product?: {
+    id: string;
+    images?: { url: string; isPrimary: boolean; sortOrder?: number }[];
+  };
 }
 
 export interface Order {
