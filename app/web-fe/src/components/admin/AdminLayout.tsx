@@ -16,6 +16,11 @@ const NAV_ITEMS = [
     label: "Danh mục",
     icon: "bi-tags",
   },
+  {
+    to: "/admin/orders",
+    label: "Đơn hàng",
+    icon: "bi-bag-check",
+  },
 ] as const;
 
 export function AdminLayout() {

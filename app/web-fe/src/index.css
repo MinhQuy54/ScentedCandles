@@ -761,9 +761,24 @@ code {
 }
 
 .account-card {
-  max-width: 480px;
-  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
   padding: 2rem 1.5rem 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: 500px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 991px) {
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .account-dl {
@@ -772,7 +787,7 @@ code {
 
 .account-dl-row {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 110px 1fr;
   gap: 0.5rem;
   padding: 0.85rem 0;
   border-bottom: 1px solid #eee;
@@ -791,6 +806,232 @@ code {
   color: #222;
   word-break: break-word;
 }
+
+/* Address Book Styles */
+.address-book-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.address-book-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.address-book-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #222;
+  margin: 0;
+}
+
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.address-card-item {
+  position: relative;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1.25rem;
+  background: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.address-card-item:hover {
+  border-color: #a8383a;
+  box-shadow: 0 4px 12px rgba(168, 56, 58, 0.08);
+  background: #fff;
+}
+
+.address-card-item.is-default {
+  border-color: #a8383a;
+  background: #fffdfd;
+}
+
+.address-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.address-card-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #222;
+}
+
+.address-card-phone {
+  font-size: 14px;
+  color: #666;
+  margin-left: 0.5rem;
+}
+
+.badge-default {
+  display: inline-block;
+  background: #fff0f0;
+  color: #a8383a;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid #f9d2d3;
+}
+
+.address-card-text {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.address-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px dashed #e5e5e5;
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.address-action-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a8383a;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.address-action-btn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.address-action-btn.btn-delete {
+  color: #d9363e;
+}
+
+.address-action-btn.btn-set-default {
+  color: #555;
+}
+
+.address-action-btn.btn-set-default:hover {
+  color: #a8383a;
+}
+
+/* VietQR Payment Panel Styles */
+.vietqr-box {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  background: #fdfaf9;
+  border: 1px solid #f3e6e6;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(168, 56, 58, 0.05);
+}
+
+.vietqr-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #a8383a;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vietqr-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  font-size: 14px;
+}
+
+.vietqr-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed #ede2e2;
+}
+
+.vietqr-info-row:last-child {
+  border-bottom: none;
+}
+
+.vietqr-label {
+  color: #666;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.vietqr-value {
+  color: #222;
+  font-weight: 600;
+}
+
+.vietqr-value-highlight {
+  color: #a8383a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.vietqr-copy-btn {
+  background: #fff;
+  border: 1px solid #e0d0d0;
+  color: #a8383a;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.vietqr-copy-btn:hover {
+  background: #a8383a;
+  color: #fff;
+  border-color: #a8383a;
+}
+
+.vietqr-card {
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 12px;
+  padding: 0.75rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.vietqr-card img {
+  border-radius: 6px;
+}
+
+.vietqr-card-caption {
+  font-size: 12px;
+  color: #777;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+
 
 .nav-popover-user {
   padding: 10px 4px 12px;

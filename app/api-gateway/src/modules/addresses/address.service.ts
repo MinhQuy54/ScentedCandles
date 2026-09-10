@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
 import { Address } from './entities/address.entity';
+import { ResponseCommon } from 'src/common/dto/response.dto';
 
 @Injectable()
 export class AddressService {
@@ -11,7 +12,7 @@ export class AddressService {
     private readonly addressRepo: Repository<Address>,
   ) {}
 
-  async create(userId: string, dto: CreateAddressDto): Promise<Address> {
+  async create(userId: string, dto: CreateAddressDto): Promise<ResponseCommon<Address>> {
     if (dto.isDefault) {
       await this.clearDefaultAddress(userId);
     } else {
@@ -21,53 +22,55 @@ export class AddressService {
       }
     }
 
-    const addr = this.addressRepo.create({
-      ...dto,
-      userId,
-    });
-    return this.addressRepo.save(addr);
+    const addr = this.addressRepo.create({ ...dto, userId });
+    const data = await this.addressRepo.save(addr);
+    return ResponseCommon.created(data, 'ADDRESS_CREATED');
   }
 
-  async findAllByUser(userId: string): Promise<Address[]> {
-    return this.addressRepo.find({
+  async findAllByUser(userId: string): Promise<ResponseCommon<Address[]>> {
+    const data = await this.addressRepo.find({
       where: { userId },
       order: { isDefault: 'DESC', created_at: 'DESC' },
     });
+    return ResponseCommon.ok(data, 'OK');
   }
 
-  async findOne(userId: string, id: string): Promise<Address> {
+  async findOne(userId: string, id: string): Promise<ResponseCommon<Address>> {
     const addr = await this.addressRepo.findOne({ where: { id, userId } });
     if (!addr) {
       throw new NotFoundException('Address not found');
     }
-    return addr;
+    return ResponseCommon.ok(addr, 'OK');
   }
 
   async update(
     userId: string,
     id: string,
     dto: UpdateAddressDto,
-  ): Promise<Address> {
-    const addr = await this.findOne(userId, id);
+  ): Promise<ResponseCommon<Address>> {
+    const { data: addr } = await this.findOne(userId, id);
 
     if (dto.isDefault && !addr.isDefault) {
       await this.clearDefaultAddress(userId);
     }
 
     Object.assign(addr, dto);
-    return this.addressRepo.save(addr);
+    const data = await this.addressRepo.save(addr);
+    return ResponseCommon.ok(data, 'ADDRESS_UPDATED');
   }
 
-  async remove(userId: string, id: string): Promise<void> {
-    const addr = await this.findOne(userId, id);
+  async remove(userId: string, id: string): Promise<ResponseCommon<null>> {
+    const { data: addr } = await this.findOne(userId, id);
     await this.addressRepo.remove(addr);
+    return ResponseCommon.ok(null, 'ADDRESS_DELETED');
   }
 
-  async setDefault(userId: string, id: string): Promise<Address> {
+  async setDefault(userId: string, id: string): Promise<ResponseCommon<Address>> {
     await this.clearDefaultAddress(userId);
-    const addr = await this.findOne(userId, id);
+    const { data: addr } = await this.findOne(userId, id);
     addr.isDefault = true;
-    return this.addressRepo.save(addr);
+    const data = await this.addressRepo.save(addr);
+    return ResponseCommon.ok(data, 'ADDRESS_DEFAULT_SET');
   }
 
   private async clearDefaultAddress(userId: string): Promise<void> {

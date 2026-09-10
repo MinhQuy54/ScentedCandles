@@ -14,9 +14,12 @@ import { RegisterPage } from "./page/RegisterPage";
 import { ForgotPasswordPage } from "./page/ForgotPasswordPage";
 import { ResetPasswordPage } from "./page/ResetPasswordPage";
 import { CartPage } from "./page/CartPage";
+import { CheckoutPage } from "./page/CheckoutPage";
+import { OrdersPage } from "./page/OrdersPage";
 import { AdminProductsPage } from "./page/admin/AdminProductsPage";
 import { AdminProductFormPage } from "./page/admin/AdminProductFormPage";
 import { AdminCategoriesPage } from "./page/admin/AdminCategoriesPage";
+import { AdminOrdersPage } from "./page/admin/AdminOrdersPage";
 
 export default function App() {
   return (
@@ -28,6 +31,22 @@ export default function App() {
               <Route path="/" element={<CatalogPage />} />
               <Route path="/products/:id" element={<ProductPage />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <OrdersPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -56,6 +75,7 @@ export default function App() {
               <Route path="products/new" element={<AdminProductFormPage />} />
               <Route path="products/:id/edit" element={<AdminProductFormPage />} />
               <Route path="categories" element={<AdminCategoriesPage />} />
+              <Route path="orders" element={<AdminOrdersPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -15,6 +15,7 @@ import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { OrderItem } from './entities/order-item.entity';
 import { Order } from './entities/order.entity';
+import { ResponseCommon } from 'src/common/dto/response.dto';
 
 @Injectable()
 export class OrdersService {
@@ -32,7 +33,7 @@ export class OrdersService {
     private readonly dataSource: DataSource,
   ) { }
 
-  async createOrder(userId: string, dto: CreateOrderDto): Promise<Order> {
+  async createOrder(userId: string, dto: CreateOrderDto): Promise<ResponseCommon<Order>> {
     let recipientName = dto.recipientName;
     let phone = dto.phone;
     let streetAddress = dto.streetAddress;
@@ -41,7 +42,10 @@ export class OrdersService {
     let city = dto.city;
 
     if (dto.addressId) {
-      const addr = await this.addressService.findOne(userId, dto.addressId);
+      const { data: addr } = await this.addressService.findOne(userId, dto.addressId);
+      if (!addr) {
+        throw new BadRequestException('Address not found');
+      }
       recipientName = addr.recipientName;
       phone = addr.phone;
       streetAddress = addr.streetAddress;
@@ -61,47 +65,41 @@ export class OrdersService {
     try {
       for (const item of sortedItems) {
         const lockKey = `lock:product:${item.productId}`;
-        let lockValue: string | null = null;
-        let attempts = 0;
 
-        while (attempts < 5) {
-          lockValue = await this.redisService.acquireLock(lockKey, 5000);
-          if (lockValue) break;
-          attempts++;
-          await new Promise((res) => setTimeout(res, 100)); // wait 100ms before retry
-        }
+        const lockValue = await this.redisService.acquireLock(
+          lockKey,
+          5000,
+        );
 
         if (!lockValue) {
           throw new ConflictException(
-            `Product ${item.productId} is currently being processed by another order. Please try again.`,
+            'Hệ thống đang bận xử lý đơn hàng cho sản phẩm này. Vui lòng thử lại sau giây lát.',
           );
         }
 
         acquiredLocks.push({ key: lockKey, lockValue });
       }
 
-      // 4. Run DB Transaction with Pessimistic Locking
+      // Check stock & create order inside DB Transaction
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
 
       try {
-        const orderNumber = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
         let subtotalNum = 0;
         const orderItemsToSave: Partial<OrderItem>[] = [];
+        const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
 
         for (const item of sortedItems) {
           const product = await queryRunner.manager.findOne(Product, {
-            where: { id: item.productId },
+            where: { id: item.productId, status: ProductStatus.ACTIVE },
           });
 
-          if (!product || product.status !== ProductStatus.ACTIVE) {
-            throw new BadRequestException(
-              `Product ${item.productId} is unavailable`,
-            );
+          if (!product) {
+            throw new BadRequestException(`Sản phẩm không tồn tại hoặc đã ngừng bán.`);
           }
 
-          // Reserve stock within transaction with SELECT FOR UPDATE
+          // Lock inventory row & reserve stock
           await this.inventoryService.reserveStockInTx(
             queryRunner,
             item.productId,
@@ -110,8 +108,7 @@ export class OrdersService {
             userId,
           );
 
-          const price = parseFloat(product.price);
-          const lineTotal = price * item.quantity;
+          const lineTotal = Number(product.price) * item.quantity;
           subtotalNum += lineTotal;
 
           orderItemsToSave.push({
@@ -124,7 +121,7 @@ export class OrdersService {
           });
         }
 
-        const shippingFeeNum = subtotalNum >= 500000 ? 0 : 30000;
+        const shippingFeeNum = subtotalNum >= 990000 ? 0 : 30000;
         const totalAmountNum = subtotalNum + shippingFeeNum;
 
         const newOrder = queryRunner.manager.create(Order, {
@@ -161,7 +158,7 @@ export class OrdersService {
         // Clear Redis cart for logged-in user
         await this.cartService.clearCart(userId).catch(() => null);
 
-        return savedOrder;
+        return ResponseCommon.created(savedOrder, 'CREATE_ORDER_SUCCESS');
       } catch (err) {
         await queryRunner.rollbackTransaction();
         throw err;
@@ -176,15 +173,15 @@ export class OrdersService {
     }
   }
 
-  async getUserOrders(userId: string): Promise<Order[]> {
-    return this.orderRepo.find({
+  async getUserOrders(userId: string): Promise<ResponseCommon<Order[]>> {
+    const data = await this.orderRepo.find({
       where: { userId },
-      relations: { items: true },
       order: { created_at: 'DESC' },
     });
+    return ResponseCommon.ok(data, 'OK');
   }
 
-  async getOrderById(userId: string, orderId: string): Promise<Order> {
+  async getOrderById(userId: string, orderId: string): Promise<ResponseCommon<Order>> {
     const order = await this.orderRepo.findOne({
       where: { id: orderId, userId },
       relations: { items: { product: true } },
@@ -193,11 +190,18 @@ export class OrdersService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
-    return order;
+    return ResponseCommon.ok(order, 'OK');
   }
 
-  async cancelOrder(userId: string, orderId: string): Promise<Order> {
-    const order = await this.getOrderById(userId, orderId);
+  async cancelOrder(userId: string, orderId: string): Promise<ResponseCommon<Order>> {
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId, userId },
+      relations: { items: { product: true } },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
 
     if (
       order.status !== OrderStatus.PENDING &&
@@ -231,7 +235,7 @@ export class OrdersService {
       const updatedOrder = await queryRunner.manager.save(order);
       await queryRunner.commitTransaction();
 
-      return updatedOrder;
+      return ResponseCommon.ok(updatedOrder, 'CANCEL_ORDER_SUCCESS');
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
@@ -241,17 +245,18 @@ export class OrdersService {
   }
 
   // Admin methods
-  async adminGetOrders(): Promise<Order[]> {
-    return this.orderRepo.find({
+  async adminGetOrders(): Promise<ResponseCommon<Order[]>> {
+    const data = await this.orderRepo.find({
       relations: { items: true, user: true },
       order: { created_at: 'DESC' },
     });
+    return ResponseCommon.ok(data, 'OK');
   }
 
   async adminUpdateOrderStatus(
     orderId: string,
     dto: UpdateOrderStatusDto,
-  ): Promise<Order> {
+  ): Promise<ResponseCommon<Order>> {
     const order = await this.orderRepo.findOne({
       where: { id: orderId },
       relations: { items: true },
@@ -284,7 +289,7 @@ export class OrdersService {
         order.status = dto.status;
         const savedOrder = await queryRunner.manager.save(order);
         await queryRunner.commitTransaction();
-        return savedOrder;
+        return ResponseCommon.ok(savedOrder, 'UPDATE_ORDER_STATUS_SUCCESS');
       } catch (err) {
         await queryRunner.rollbackTransaction();
         throw err;
@@ -297,6 +302,7 @@ export class OrdersService {
     if (dto.status === OrderStatus.DELIVERED) {
       order.paymentStatus = PaymentStatus.PAID;
     }
-    return this.orderRepo.save(order);
+    const saved = await this.orderRepo.save(order);
+    return ResponseCommon.ok(saved, 'UPDATE_ORDER_STATUS_SUCCESS');
   }
 }

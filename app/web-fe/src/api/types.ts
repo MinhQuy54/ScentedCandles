@@ -98,3 +98,73 @@ export interface Cart {
   totalItems: number;
   totalPrice: number;
 }
+
+export interface Address {
+  id: string;
+  userId: string;
+  recipientName: string;
+  phone: string;
+  streetAddress: string;
+  ward: string;
+  district: string;
+  city: string;
+  isDefault: boolean;
+  created_at: string;
+}
+
+export interface CreateAddressPayload {
+  recipientName: string;
+  phone: string;
+  streetAddress: string;
+  ward: string;
+  district: string;
+  city: string;
+  isDefault?: boolean;
+}
+
+export type UpdateAddressPayload = Partial<CreateAddressPayload>;
+
+
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  unitPrice: string;
+  quantity: number;
+  totalPrice: string;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  userId: string;
+  status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+  paymentMethod: 'COD' | 'BANK_TRANSFER';
+  shippingRecipientName: string;
+  shippingPhone: string;
+  shippingStreetAddress: string;
+  shippingWard: string;
+  shippingDistrict: string;
+  shippingCity: string;
+  subtotal: string;
+  shippingFee: string;
+  totalAmount: string;
+  items?: OrderItem[];
+  created_at: string;
+}
+
+export interface CreateOrderPayload {
+  addressId?: string;
+  recipientName?: string;
+  phone?: string;
+  streetAddress?: string;
+  ward?: string;
+  district?: string;
+  city?: string;
+  items: { productId: string; quantity: number }[];
+  paymentMethod: 'COD' | 'BANK_TRANSFER';
+  note?: string;
+}

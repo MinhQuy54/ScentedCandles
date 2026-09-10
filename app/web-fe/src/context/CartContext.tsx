@@ -36,6 +36,7 @@ interface CartContextValue {
     updateQuantity: (productId: string, quantity: number) => Promise<void>;
     removeFromCart: (productId: string) => Promise<void>;
     refreshCart: () => Promise<void>;
+    clearCart: () => Promise<void>
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -106,7 +107,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
             notification.error({ message: 'Không thể xóa sản phẩm' });
         }
     };
-
+    const clearCart = async () => {
+        setItems([]);
+        setTotalItems(0);
+        setTotalPrice(0);
+        await refreshCart();
+    };
     return (
         <CartContext.Provider
             value={{
@@ -123,6 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 updateQuantity,
                 removeFromCart,
                 refreshCart,
+                clearCart
             }}
         >
             {children}
