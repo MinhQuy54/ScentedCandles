@@ -184,247 +184,256 @@ export function AdminProductFormPage() {
   }
 
   if (loading) {
-    return <p className="text-muted py-4">Đang tải sản phẩm…</p>;
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-warning" role="status">
+          <span className="visually-hidden">Đang tải sản phẩm...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="admin-form-card">
-          <h1 className="admin-heading">
-            {isEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
-          </h1>
-          <p className="admin-lead">
-            {isEdit
-              ? "Cập nhật thông tin và upload ảnh cho sản phẩm."
-              : "Điền thông tin cơ bản, sau đó upload ảnh ở bước tiếp theo."}
+    <div style={{ maxWidth: "1000px" }}>
+      <div className="d-flex align-items-center gap-2 mb-3">
+        <Link to="/admin/products" className="text-secondary text-decoration-none small fw-semibold">
+          <i className="bi bi-arrow-left"></i> Quay lại danh sách sản phẩm
+        </Link>
+      </div>
+
+      <div className="admin-card p-4 p-md-5 mb-4">
+        <h1 className="fw-bold mb-1 text-dark" style={{ fontSize: "22px" }}>
+          {isEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
+        </h1>
+        <p className="text-muted small mb-4">
+          {isEdit
+            ? "Cập nhật thông tin chi tiết, giá bán và upload bộ sưu tập ảnh."
+            : "Điền thông tin cơ bản, sau đó tải ảnh sản phẩm lên hệ thống."}
+        </p>
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label htmlFor="product-name" className="form-label auth-label">
+                Tên sản phẩm *
+              </label>
+              <input
+                id="product-name"
+                type="text"
+                className="form-control auth-input"
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                required
+                disabled={saving}
+              />
+            </div>
+
+            <div className="col-md-6">
+              <label htmlFor="product-slug" className="form-label auth-label">
+                Slug (Đường dẫn tĩnh) *
+              </label>
+              <input
+                id="product-slug"
+                type="text"
+                className="form-control auth-input font-monospace small"
+                value={slug}
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setSlug(e.target.value);
+                }}
+                required
+                disabled={saving}
+              />
+            </div>
+
+            <div className="col-md-4">
+              <label htmlFor="product-category" className="form-label auth-label">
+                Danh mục *
+              </label>
+              <select
+                id="product-category"
+                className="form-select auth-input"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                required
+                disabled={saving || categories.length === 0}
+              >
+                {categories.length === 0 ? (
+                  <option value="">Chưa có danh mục</option>
+                ) : (
+                  categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div className="col-md-4">
+              <label htmlFor="product-sku" className="form-label auth-label">
+                Mã SKU
+              </label>
+              <input
+                id="product-sku"
+                type="text"
+                className="form-control auth-input font-monospace small"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                placeholder="Tự sinh nếu để trống"
+                disabled={saving}
+              />
+            </div>
+
+            <div className="col-md-4">
+              <label htmlFor="product-price" className="form-label auth-label">
+                Giá bán (VND) *
+              </label>
+              <input
+                id="product-price"
+                type="number"
+                min={0}
+                step={1000}
+                className="form-control auth-input"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+                disabled={saving}
+              />
+            </div>
+
+            <div className="col-md-6">
+              <label htmlFor="product-status" className="form-label auth-label">
+                Trạng thái hiển thị
+              </label>
+              <select
+                id="product-status"
+                className="form-select auth-input"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                disabled={saving}
+              >
+                {PRODUCT_STATUSES.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-6 d-flex align-items-end">
+              <div className="form-check mb-2 bg-light p-2 px-3 rounded border w-100">
+                <input
+                  id="product-featured"
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={isFeatured}
+                  onChange={(e) => setIsFeatured(e.target.checked)}
+                  disabled={saving}
+                />
+                <label htmlFor="product-featured" className="form-check-label auth-label mb-0 ms-1 cursor-pointer">
+                  Đánh dấu là Sản phẩm nổi bật (Featured)
+                </label>
+              </div>
+            </div>
+
+            <div className="col-12">
+              <label htmlFor="product-short-desc" className="form-label auth-label">
+                Mô tả ngắn
+              </label>
+              <input
+                id="product-short-desc"
+                type="text"
+                className="form-control auth-input"
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+                disabled={saving}
+                placeholder="Ví dụ: Hương thơm gỗ tuyết tùng thư giãn phòng ngủ..."
+              />
+            </div>
+
+            <div className="col-12">
+              <label htmlFor="product-desc" className="form-label auth-label">
+                Mô tả chi tiết *
+              </label>
+              <textarea
+                id="product-desc"
+                className="form-control auth-input"
+                rows={6}
+                value={rawDescription}
+                onChange={(e) => setRawDescription(e.target.value)}
+                required
+                disabled={saving}
+                placeholder="Mô tả kỹ hơn về các tầng hương, thành phần sáp nến, thời gian cháy..."
+              />
+            </div>
+          </div>
+
+          <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <Link to="/admin/products" className="admin-action-btn admin-action-btn-outline">
+              Hủy bỏ
+            </Link>
+            <button
+              type="submit"
+              className="admin-action-btn admin-action-btn-primary px-4"
+              disabled={saving || !categoryId}
+            >
+              <i className="bi bi-check-lg"></i>
+              {saving ? "Đang lưu…" : isEdit ? "Lưu thay đổi" : "Tạo sản phẩm"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {isEdit && (
+        <div className="admin-card p-4 p-md-5">
+          <h2 className="fw-bold mb-1 text-dark" style={{ fontSize: "18px" }}>
+            <i className="bi bi-images text-warning me-2"></i> Bộ sưu tập ảnh sản phẩm
+          </h2>
+          <p className="text-muted small mb-4">
+            Định dạng hỗ trợ: JPEG, PNG, WebP — Kích thước đề xuất 1000x1000px, tối đa 5MB mỗi ảnh.
           </p>
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label htmlFor="product-name" className="form-label auth-label">
-                  Tên sản phẩm *
-                </label>
-                <input
-                  id="product-name"
-                  type="text"
-                  className="form-control auth-input"
-                  value={name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  required
-                  disabled={saving}
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label htmlFor="product-slug" className="form-label auth-label">
-                  Slug *
-                </label>
-                <input
-                  id="product-slug"
-                  type="text"
-                  className="form-control auth-input"
-                  value={slug}
-                  onChange={(e) => {
-                    setSlugTouched(true);
-                    setSlug(e.target.value);
-                  }}
-                  required
-                  disabled={saving}
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label
-                  htmlFor="product-category"
-                  className="form-label auth-label"
-                >
-                  Danh mục *
-                </label>
-                <select
-                  id="product-category"
-                  className="form-select auth-input"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  required
-                  disabled={saving || categories.length === 0}
-                >
-                  {categories.length === 0 ? (
-                    <option value="">Chưa có danh mục</option>
-                  ) : (
-                    categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="col-md-4">
-                <label htmlFor="product-sku" className="form-label auth-label">
-                  SKU
-                </label>
-                <input
-                  id="product-sku"
-                  type="text"
-                  className="form-control auth-input"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  placeholder="Để trống để tự sinh"
-                  disabled={saving}
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label htmlFor="product-price" className="form-label auth-label">
-                  Giá (VND) *
-                </label>
-                <input
-                  id="product-price"
-                  type="number"
-                  min={0}
-                  step={1000}
-                  className="form-control auth-input"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  disabled={saving}
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label
-                  htmlFor="product-status"
-                  className="form-label auth-label"
-                >
-                  Trạng thái
-                </label>
-                <select
-                  id="product-status"
-                  className="form-select auth-input"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  disabled={saving}
-                >
-                  {PRODUCT_STATUSES.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-4 d-flex align-items-end">
-                <div className="form-check mb-2">
-                  <input
-                    id="product-featured"
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={isFeatured}
-                    onChange={(e) => setIsFeatured(e.target.checked)}
-                    disabled={saving}
+          {images.length > 0 && (
+            <div className="d-flex flex-wrap gap-3 mb-4">
+              {images.map((image) => (
+                <div key={image.id} className="position-relative">
+                  <img
+                    src={image.url}
+                    alt={image.altText ?? name}
+                    className="rounded-3 border shadow-sm"
+                    style={{ width: "120px", height: "120px", objectFit: "cover" }}
                   />
-                  <label
-                    htmlFor="product-featured"
-                    className="form-check-label auth-label"
-                  >
-                    Sản phẩm nổi bật
-                  </label>
+                  {image.isPrimary && (
+                    <span className="position-absolute bottom-0 start-0 m-1 badge bg-warning text-dark font-semibold shadow-sm">
+                      Ảnh chính
+                    </span>
+                  )}
                 </div>
-              </div>
-
-              <div className="col-12">
-                <label
-                  htmlFor="product-short-desc"
-                  className="form-label auth-label"
-                >
-                  Mô tả ngắn
-                </label>
-                <input
-                  id="product-short-desc"
-                  type="text"
-                  className="form-control auth-input"
-                  value={shortDescription}
-                  onChange={(e) => setShortDescription(e.target.value)}
-                  disabled={saving}
-                />
-              </div>
-
-              <div className="col-12">
-                <label
-                  htmlFor="product-desc"
-                  className="form-label auth-label"
-                >
-                  Mô tả chi tiết *
-                </label>
-                <textarea
-                  id="product-desc"
-                  className="form-control auth-input"
-                  rows={5}
-                  value={rawDescription}
-                  onChange={(e) => setRawDescription(e.target.value)}
-                  required
-                  disabled={saving}
-                />
-              </div>
+              ))}
             </div>
-
-            <div className="admin-form-actions">
-              <Link to="/admin/products" className="btn btn-outline-secondary">
-                Hủy
-              </Link>
-              <button
-                type="submit"
-                className="btn auth-submit"
-                disabled={saving || !categoryId}
-              >
-                {saving ? "Đang lưu…" : isEdit ? "Lưu thay đổi" : "Tạo sản phẩm"}
-              </button>
-            </div>
-          </form>
-
-          {isEdit && (
-            <section className="admin-upload-section">
-              <h2 className="admin-subheading">Ảnh sản phẩm</h2>
-              <p className="admin-lead mb-3">
-                JPEG, PNG hoặc WebP — tối đa 5MB mỗi ảnh.
-              </p>
-
-              {images.length > 0 && (
-                <div className="admin-image-grid mb-3">
-                  {images.map((image) => (
-                    <figure key={image.id} className="admin-image-item">
-                      <img
-                        src={image.url}
-                        alt={image.altText ?? name}
-                      />
-                      {image.isPrimary && (
-                        <span className="admin-badge admin-badge-active">
-                          Ảnh chính
-                        </span>
-                      )}
-                    </figure>
-                  ))}
-                </div>
-              )}
-
-              <label className="admin-upload-label">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  disabled={uploading}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void handleImageUpload(file);
-                    e.target.value = "";
-                  }}
-                />
-                <span className="btn btn-outline-secondary">
-                  {uploading ? "Đang upload…" : "+ Thêm ảnh"}
-                </span>
-              </label>
-            </section>
           )}
+
+          <label className="d-inline-block cursor-pointer">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="d-none"
+              disabled={uploading}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleImageUpload(file);
+                e.target.value = "";
+              }}
+            />
+            <span className="admin-action-btn admin-action-btn-outline px-4 py-2">
+              <i className="bi bi-cloud-upload"></i>
+              {uploading ? "Đang tải ảnh lên…" : "+ Tải ảnh mới lên"}
+            </span>
+          </label>
+        </div>
+      )}
     </div>
   );
 }
+

@@ -66,20 +66,19 @@ export function NavAccount({ open, onToggle, onClose }: NavAccountProps) {
                 </Link>
               </li>
               <li>
-                <Link to="/orders" onClick={onClose}>
-                  Đơn hàng của tôi
-                </Link>
+                {user.role === "CUSTOMER" && (
+                  <>
+                    <Link to="/orders" onClick={onClose}>
+                      Đơn hàng của tôi
+                    </Link>
+                  </>
+                )}
               </li>
               {user.role === "ADMIN" && (
                 <>
                   <li>
-                    <Link to="/admin/products" onClick={onClose}>
-                      Quản trị sản phẩm
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/admin/orders" onClick={onClose}>
-                      Quản lý đơn hàng
+                    <Link to="/admin/" onClick={onClose}>
+                      Quản trị
                     </Link>
                   </li>
                 </>

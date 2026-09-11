@@ -146,99 +146,130 @@ export function AdminCategoriesPage() {
   }
 
   return (
-    <>
-      <div className="admin-header">
+    <div>
+      {/* Header */}
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-          <h1 className="admin-heading">Quản lý danh mục</h1>
-          <p className="admin-lead">Tạo, cập nhật và sắp xếp danh mục sản phẩm AuraScent.</p>
+          <h1 className="fw-bold mb-1 text-dark fs-5">
+            Quản lý Danh mục
+          </h1>
+          <p className="text-muted small m-0">
+            Phân loại sản phẩm, cấu hình slug và thứ tự hiển thị trên trang chủ.
+          </p>
         </div>
         <button
           type="button"
-          className="btn auth-submit"
+          className="admin-action-btn admin-action-btn-primary"
           onClick={handleOpenCreateModal}
         >
-          + Thêm danh mục
+          <i className="bi bi-plus-lg"></i> Thêm danh mục mới
         </button>
       </div>
 
       {loading ? (
-        <p className="text-muted py-4">Đang tải danh mục…</p>
+        <div className="d-flex justify-content-center align-items-center py-5">
+          <div className="spinner-border text-danger" role="status">
+            <span className="visually-hidden">Đang tải danh mục...</span>
+          </div>
+        </div>
       ) : categories.length === 0 ? (
-        <p className="text-muted py-4">Chưa có danh mục nào.</p>
-      ) : (
-        <div className="table-responsive admin-table-wrap">
-          <table className="table admin-table align-middle">
-            <thead>
-              <tr>
-                <th>Tên danh mục</th>
-                <th>Mô tả</th>
-                <th>Thứ tự</th>
-                <th>Trạng thái</th>
-                <th className="text-end">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map((cat: any) => {
-                const isDeleted = Boolean(cat.deleted_at);
 
-                return (
-                  <tr
-                    key={cat.id}
-                    className={isDeleted ? "admin-row-deleted" : undefined}
-                  >
-                    <td>
-                      <div className="admin-product-name">{cat.name}</div>
-                      {isDeleted && (
-                        <span className="admin-badge admin-badge-muted">
-                          Đã xóa
+        <div className="admin-card p-5 text-center text-muted">
+          <i className="bi bi-tags fs-1 text-muted opacity-50 mb-2"></i>
+          <p className="mb-0">Chưa có danh mục nào. Hãy tạo danh mục đầu tiên!</p>
+        </div>
+      ) : (
+        <div className="admin-table-container">
+          <div className="table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Tên danh mục</th>
+                  <th>Slug tĩnh</th>
+                  <th>Mô tả</th>
+                  <th>Thứ tự</th>
+                  <th>Trạng thái</th>
+                  <th className="text-end">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((cat: any) => {
+                  const isDeleted = Boolean(cat.deleted_at);
+
+                  return (
+                    <tr
+                      key={cat.id}
+                      className={isDeleted ? "admin-row-deleted" : undefined}
+                    >
+                      <td>
+                        <div className="fw-semibold text-dark fs-6">{cat.name}</div>
+                        {isDeleted && (
+                          <span className="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill mt-1">
+                            Đã xóa mềm
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span className="font-monospace small text-muted bg-light px-2 py-1 rounded border">
+                          /{cat.slug}
                         </span>
-                      )}
-                    </td>
-                    <td>{cat.description || "—"}</td>
-                    <td>{cat.sortOrder ?? 0}</td>
-                    <td>
-                      {cat.isActive !== false ? (
-                        <span className="admin-badge admin-badge-active">
-                          Đang bật
+                      </td>
+                      <td className="text-secondary small">{cat.description || "—"}</td>
+                      <td>
+                        <span className="badge bg-light text-dark border">
+                          #{cat.sortOrder ?? 0}
                         </span>
-                      ) : (
-                        <span className="admin-badge admin-badge-inactive">
-                          Ẩn
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-end">
-                      <div className="admin-actions">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleOpenEditModal(cat)}
-                        >
-                          Sửa
-                        </button>
-                        {!isDeleted && (
+                      </td>
+                      <td>
+                        {cat.isActive !== false ? (
+                          <span className="admin-badge-status admin-badge-delivered">
+                            <i className="bi bi-eye-fill me-1"></i> Hiển thị
+                          </span>
+                        ) : (
+                          <span className="admin-badge-status admin-badge-cancelled">
+                            <i className="bi bi-eye-slash-fill me-1"></i> Ẩn
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-end">
+                        <div className="d-flex justify-content-end gap-2">
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline-danger"
-                            disabled={deletingId === cat.id}
-                            onClick={() => void handleDelete(cat)}
+                            className="admin-action-btn admin-action-btn-outline"
+                            onClick={() => handleOpenEditModal(cat)}
                           >
-                            {deletingId === cat.id ? "Đang xóa…" : "Xóa"}
+                            <i className="bi bi-pencil"></i> Sửa
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          {!isDeleted && (
+                            <button
+                              type="button"
+                              className="admin-action-btn admin-action-btn-danger"
+                              disabled={deletingId === cat.id}
+                              onClick={() => void handleDelete(cat)}
+                            >
+                              <i className="bi bi-trash"></i>
+                              {deletingId === cat.id ? "Đang xóa…" : "Xóa"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Modal Create/Edit Category */}
       <Modal
-        title={editingCategory ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
+        title={
+          <div className="d-flex align-items-center gap-2">
+            <i className="bi bi-tag text-warning"></i>
+            <span>{editingCategory ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}</span>
+          </div>
+        }
         open={isModalOpen}
         onOk={() => void handleSubmitForm()}
         onCancel={() => setIsModalOpen(false)}
@@ -282,6 +313,7 @@ export function AdminCategoriesPage() {
           </div>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 }
+

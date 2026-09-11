@@ -42,6 +42,16 @@ export function AdminLayout() {
     setSidebarOpen(false);
   }
 
+  // Get user initials for avatar
+  const initials = user?.fullName
+    ? user.fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "AD";
+
   return (
     <div className="admin-layout">
       {sidebarOpen && (
@@ -53,21 +63,19 @@ export function AdminLayout() {
         />
       )}
 
-      <aside
-        className={`admin-layout-sidebar${sidebarOpen ? " is-open" : ""}`}
-      >
+      <aside className={`admin-layout-sidebar${sidebarOpen ? " is-open" : ""}`}>
         <div className="admin-layout-brand">
-          <Link to="/admin/products" onClick={closeSidebar}>
+          <Link to="/admin/products" onClick={closeSidebar} className="d-flex align-items-center gap-2 text-decoration-none">
             <img src={logo2} alt="AuraScent Admin" />
           </Link>
-          <span className="admin-layout-brand-badge">Admin</span>
+          <span className="admin-layout-brand-badge">ADMIN</span>
         </div>
 
         <nav className="admin-layout-nav">
-          <p className="admin-layout-nav-title">Quản lý</p>
+          <p className="admin-layout-nav-title">Hệ thống Quản lý</p>
           <ul className="list-unstyled mb-0">
             {NAV_ITEMS.map((item) => (
-              <li key={item.to}>
+              <li key={item.to} className="mb-1">
                 <NavLink
                   to={item.to}
                   className={({ isActive }) =>
@@ -76,7 +84,7 @@ export function AdminLayout() {
                   onClick={closeSidebar}
                 >
                   <i className={`bi ${item.icon}`} aria-hidden />
-                  {item.label}
+                  <span>{item.label}</span>
                 </NavLink>
               </li>
             ))}
@@ -90,7 +98,7 @@ export function AdminLayout() {
             onClick={closeSidebar}
           >
             <i className="bi bi-shop" aria-hidden />
-            Về cửa hàng
+            <span>Về trang bán hàng</span>
           </Link>
         </div>
       </aside>
@@ -106,26 +114,36 @@ export function AdminLayout() {
             <i className="bi bi-list" aria-hidden />
           </button>
 
-          <div className="admin-layout-topbar-spacer" />
-
-          <div className="admin-layout-topbar-user">
-            <span className="admin-layout-user-name">{user?.fullName}</span>
-            <span className="admin-layout-user-role">ADMIN</span>
+          <div className="d-none d-md-flex align-items-center gap-2">
+            <i className="bi bi-shield-lock text-warning fs-5"></i>
+            <span className="admin-topbar-title">Bảng quản trị AuraScent</span>
           </div>
 
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary admin-layout-logout-btn"
-            onClick={handleLogout}
-          >
-            Đăng xuất
-          </button>
+          <div className="admin-layout-topbar-spacer" />
+
+          <div className="d-flex align-items-center gap-3">
+            <div className="admin-user-avatar">{initials}</div>
+            <div className="admin-layout-topbar-user">
+              <span className="admin-layout-user-name">{user?.fullName || "Admin"}</span>
+              <span className="admin-layout-user-role">QUẢN TRỊ VIÊN</span>
+            </div>
+
+            <button
+              type="button"
+              className="admin-btn-logout ms-2"
+              onClick={handleLogout}
+            >
+              <i className="bi bi-box-arrow-right"></i>
+              <span className="d-none d-sm-inline">Đăng xuất</span>
+            </button>
+          </div>
         </header>
 
-        <div className="admin-layout-content">
+        <main className="admin-layout-content">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );
 }
+
