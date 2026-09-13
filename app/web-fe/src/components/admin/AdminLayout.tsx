@@ -25,7 +25,18 @@ const NAV_ITEMS = [
     to: "/admin/inventory",
     label: "Tồn kho",
     icon: "bi-boxes"
-  }
+  },
+  {
+    to: "/admin/images",
+    label: "Ảnh sản phẩm",
+    icon: "bi-images"
+  },
+  {
+    to: "/admin/users",
+    label: "Nguòi dùng",
+    icon: "bi-people"
+  },
+
 ] as const;
 
 export function AdminLayout() {
