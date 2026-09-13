@@ -20,6 +20,7 @@ import { AdminProductsPage } from "./page/admin/AdminProductsPage";
 import { AdminProductFormPage } from "./page/admin/AdminProductFormPage";
 import { AdminCategoriesPage } from "./page/admin/AdminCategoriesPage";
 import { AdminOrdersPage } from "./page/admin/AdminOrdersPage";
+import { AdminInventoryPage } from "./page/admin/AdminInventoryPage";
 
 export default function App() {
   return (
@@ -76,6 +77,7 @@ export default function App() {
               <Route path="products/:id/edit" element={<AdminProductFormPage />} />
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
+              <Route path="inventory" element={<AdminInventoryPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

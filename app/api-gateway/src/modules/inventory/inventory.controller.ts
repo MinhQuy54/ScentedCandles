@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Patch,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -38,13 +39,19 @@ export class InventoryController {
 export class AdminInventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all inventory items (admin)' })
+  getAllInventory() {
+    return this.inventoryService.getAllInventory();
+  }
+
   @Get('product/:productId/transactions')
   @ApiOperation({ summary: 'Get inventory transactions log (admin)' })
   getTransactions(@Param('productId', ParseUUIDPipe) productId: string) {
     return this.inventoryService.getTransactions(productId);
   }
 
-  @Put('product/:productId')
+  @Patch('product/:productId')
   @ApiOperation({ summary: 'Set total stock for a product (admin)' })
   setStock(
     @Param('productId', ParseUUIDPipe) productId: string,

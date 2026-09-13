@@ -172,3 +172,39 @@ export interface CreateOrderPayload {
   paymentMethod: 'COD' | 'BANK_TRANSFER';
   note?: string;
 }
+
+export interface InventoryItem {
+  id: string;
+  productId: string;
+  quantityOnHand: number;    // Tồn kho thực tế
+  quantityReserved: number;  // Số lượng đang giữ cho đơn PENDING
+  lowStockThreshold: number;
+  product?: {
+    name: string;
+    sku: string;
+    price: string;
+  };
+}
+
+export interface InventoryTransaction {
+  id: string;
+  inventoryId: string;
+  type: string;
+  quantityChange: number;
+  quantityAfter: number;
+  referenceType?: string;
+  referenceId?: string;
+  note?: string;
+  createdBy?: string;
+  createdAt: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  phone?: string;
+  fullName: string;
+  isActive: boolean;
+  createdAt: string;
+  roles?: { name: string }[];
+}

@@ -21,6 +21,11 @@ const NAV_ITEMS = [
     label: "Đơn hàng",
     icon: "bi-bag-check",
   },
+  {
+    to: "/admin/inventory",
+    label: "Tồn kho",
+    icon: "bi-boxes"
+  }
 ] as const;
 
 export function AdminLayout() {
@@ -45,11 +50,11 @@ export function AdminLayout() {
   // Get user initials for avatar
   const initials = user?.fullName
     ? user.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "AD";
 
   return (

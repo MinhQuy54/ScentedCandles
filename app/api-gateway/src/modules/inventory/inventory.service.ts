@@ -10,6 +10,8 @@ import { AdjustInventoryDto, UpdateInventoryDto } from './dto/inventory.dto';
 import { InventoryTransaction } from './entities/inventory-transaction.entity';
 import { Inventory } from './entities/inventory.entity';
 
+import { Product } from '../products/entities/product.entity';
+
 @Injectable()
 export class InventoryService {
   constructor(
@@ -19,6 +21,34 @@ export class InventoryService {
     private readonly transactionRepo: Repository<InventoryTransaction>,
     private readonly dataSource: DataSource,
   ) { }
+
+  async getAllInventory(): Promise<Inventory[]> {
+    const products = await this.dataSource.getRepository(Product).find();
+    const existingInventories = await this.inventoryRepo.find({
+      relations: { product: true },
+    });
+
+    const existingProductIds = new Set(existingInventories.map((inv) => inv.productId));
+
+    const missingProducts = products.filter((p) => !existingProductIds.has(p.id));
+
+    if (missingProducts.length > 0) {
+      const newInventories = missingProducts.map((p) =>
+        this.inventoryRepo.create({
+          productId: p.id,
+          quantityOnHand: 0,
+          quantityReserved: 0,
+          lowStockThreshold: 5,
+        }),
+      );
+      await this.inventoryRepo.save(newInventories);
+    }
+
+    return this.inventoryRepo.find({
+      relations: { product: true },
+      order: { product: { name: 'ASC' } },
+    });
+  }
 
   async getInventory(productId: string): Promise<Inventory> {
     const inv = await this.inventoryRepo.findOne({
