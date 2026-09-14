@@ -22,6 +22,7 @@ import { AdminCategoriesPage } from "./page/admin/AdminCategoriesPage";
 import { AdminOrdersPage } from "./page/admin/AdminOrdersPage";
 import { AdminInventoryPage } from "./page/admin/AdminInventoryPage";
 import { AdminProductImagesPage } from "./page/admin/AdminProductImagesPage";
+import { AdminUsersPage } from "./page/admin/AdminUserPage";
 
 export default function App() {
   return (
@@ -80,6 +81,7 @@ export default function App() {
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="inventory" element={<AdminInventoryPage />} />
               <Route path="images" element={<AdminProductImagesPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
             </Route>
           </Routes>
         </BrowserRouter>
