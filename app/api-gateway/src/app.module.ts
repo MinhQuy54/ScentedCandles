@@ -79,6 +79,9 @@ import { OrdersModule } from './modules/orders/orders.module';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
+      serveStaticOptions: {
+        fallthrough: false,
+      },
     }),
     CartModule,
   ],
