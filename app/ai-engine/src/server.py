@@ -1,5 +1,7 @@
 import sys
 import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import concurrent.futures
@@ -12,6 +14,23 @@ from src.service.generated import scented_candles_pb2_grpc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("ai-engine-grpc")
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    """Simple HTTP Handler cho Render Web Service health check"""
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        pass  # Tắt log HTTP thừa
+
+def start_health_check_server():
+    http_port = int(os.environ.get("PORT", 10000))
+    httpd = HTTPServer(("0.0.0.0", http_port), HealthCheckHandler)
+    logger.info(f"HTTP Health Check Server running on port {http_port}")
+    httpd.serve_forever()
 
 class ScentedCandlesAIServicer(scented_candles_pb2_grpc.ScentedCandlesAIServiceServicer):
     """Implementation của ScentedCandlesAIService gRPC Interface"""
@@ -47,14 +66,18 @@ class ScentedCandlesAIServicer(scented_candles_pb2_grpc.ScentedCandlesAIServiceS
         )
 
 def serve():
-    port = "50051"
+    # Khởi chạy HTTP Health Check trên thread phụ để đáp ứng Render Free Web Service
+    health_thread = threading.Thread(target=start_health_check_server, daemon=True)
+    health_thread.start()
+
+    grpc_port = "50051"
     server = grpc.server(concurrent.futures.ThreadPoolExecutor(max_workers=10))
     scented_candles_pb2_grpc.add_ScentedCandlesAIServiceServicer_to_server(
         ScentedCandlesAIServicer(), server
     )
-    server.add_insecure_port(f"[::]:{port}")
+    server.add_insecure_port(f"[::]:{grpc_port}")
     server.start()
-    logger.info(f"gRPC AI Engine Server running on port {port}")
+    logger.info(f"gRPC AI Engine Server running on port {grpc_port}")
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:
