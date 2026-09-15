@@ -28,6 +28,8 @@ services:
           property: hostport
       - key: PORT
         value: "3000"
+      - key: FRONTEND_URL
+        value: "https://aurascent-eight.vercel.app"
 
   # 2. AI Engine (Python gRPC Service - Private Service)
   - type: pserv
@@ -43,28 +45,14 @@ services:
           name: scented-candles-redis
           property: connectionString
 
-  # 3. Web Frontend (React + Vite)
-  - type: web
-    name: scented-candles-web-fe
-    runtime: docker
-    rootDir: app/web-fe
-    dockerfilePath: Dockerfile
-    plan: free
-    envVars:
-      - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: scented-candles-api-gateway
-          property: url
-
-  # 4. Redis Cache / Message Broker
+  # 3. Redis Cache / Message Broker
   - type: redis
     name: scented-candles-redis
     plan: free
     ipAllowList: []
 
 databases:
-  # 5. PostgreSQL Database
+  # 4. PostgreSQL Database
   - name: scented-candles-postgres
     databaseName: scented_candles
     user: scented_user
