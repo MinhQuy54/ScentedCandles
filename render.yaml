@@ -23,7 +23,7 @@ services:
           property: port
       - key: AI_SERVICE_GRPC_URL
         fromService:
-          type: pserv
+          type: web
           name: scented-candles-ai-engine
           property: hostport
       - key: PORT
@@ -33,8 +33,8 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
-  # 2. AI Engine (Python gRPC Service - Private Service)
-  - type: pserv
+  # 2. AI Engine (Python gRPC Service - Web Service for Free Plan)
+  - type: web
     name: scented-candles-ai-engine
     runtime: docker
     rootDir: app/ai-engine
