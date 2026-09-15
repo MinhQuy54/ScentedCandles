@@ -30,6 +30,8 @@ services:
         value: "3000"
       - key: FRONTEND_URL
         value: "https://aurascent-eight.vercel.app"
+      - key: JWT_SECRET
+        generateValue: true
 
   # 2. AI Engine (Python gRPC Service - Private Service)
   - type: pserv
