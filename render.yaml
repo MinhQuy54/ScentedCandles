@@ -30,6 +30,8 @@ services:
         value: "3000"
       - key: FRONTEND_URL
         value: "https://aurascent-eight.vercel.app"
+      - key: PUBLIC_BASE_URL
+        value: "https://scented-candles-api-gateway.onrender.com"
       - key: JWT_SECRET
         generateValue: true
 
