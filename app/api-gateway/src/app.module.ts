@@ -53,7 +53,7 @@ import { OrdersModule } from './modules/orders/orders.module';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: false,
           migrations: [__dirname + '/db/migrations/*.{js,ts}'],
-          migrationsRun: configService.get<string>('NODE_ENV') !== 'production',
+          migrationsRun: true,
         };
 
         const databaseUrl = configService.get<string>('DATABASE_URL');
