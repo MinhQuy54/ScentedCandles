@@ -20,7 +20,7 @@ import { UsersService } from '../users/users.service';
 @UseGuards(RoleGuard)
 @Role(UserRole.ADMIN)
 export class AdminUsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get all users (admin)' })

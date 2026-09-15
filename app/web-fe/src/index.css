@@ -423,7 +423,7 @@ code {
 }
 
 .nav-popover--search {
-  width: 360px;
+  width: min(440px, calc(100vw - 24px));
 }
 
 .nav-popover.is-open {
@@ -471,13 +471,18 @@ code {
 
 .search-popover-input {
   width: 100%;
-  border: none;
+  border: 1px solid transparent;
   outline: none;
   background: #f3f3f3;
   border-radius: 6px;
   padding: 14px 44px 14px 16px;
   font-size: 15px;
   color: #333;
+}
+
+.search-popover-input:focus {
+  background: #fff;
+  border-color: #a8383a;
 }
 
 .search-popover-input::placeholder {
@@ -500,6 +505,79 @@ code {
 
 .search-popover-submit:hover {
   color: #a8383a;
+}
+
+.search-suggest {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.search-suggest-empty {
+  padding: 16px 4px;
+  font-size: 14px;
+  color: #888;
+  text-align: center;
+}
+
+.search-suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid #eee;
+  text-decoration: none;
+  color: inherit;
+}
+
+.search-suggest li:last-child .search-suggest-item {
+  border-bottom: none;
+}
+
+.search-suggest-item:hover,
+.search-suggest-item.is-active {
+  background: #fafafa;
+}
+
+.search-suggest-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.search-suggest-name {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.35;
+}
+
+.search-suggest-prices {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.search-suggest-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.search-suggest-compare {
+  font-size: 13px;
+  font-weight: 400;
+  color: #b0b0b0;
+}
+
+.search-suggest-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .nav-popover-menu li {

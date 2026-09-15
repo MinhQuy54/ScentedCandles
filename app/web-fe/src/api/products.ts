@@ -6,6 +6,7 @@ export async function fetchProducts(params?: {
   limit?: number;
   name?: string;
   categoryId?: string;
+  signal?: AbortSignal;
 }) {
   const query = new URLSearchParams();
 
@@ -16,7 +17,9 @@ export async function fetchProducts(params?: {
 
   const qs = query.toString();
 
-  return request<ProductListData>(`/products${qs ? `?${qs}` : ""}`);
+  return request<ProductListData>(`/products${qs ? `?${qs}` : ""}`, {
+    signal: params?.signal,
+  });
 }
 
 export async function fetchProduct(id: string) {
