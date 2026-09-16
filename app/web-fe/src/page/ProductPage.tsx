@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchProduct, fetchProducts } from "../api/products";
 import type { Product } from "../api/types";
-import { discountPercent, formatPrice, primaryImage } from "../lib/products";
+import { discountPercent, formatPrice, getImageUrl, primaryImage } from "../lib/products";
 import { ProductCard } from "../components/ProductCard";
 import { CandleUsageGuide } from "../components/CandleUsageGuide";
 import { useCart } from "../context/CartContext";
@@ -137,10 +137,10 @@ export function ProductPage() {
                           overflow: "hidden",
                           borderRadius: "0px",
                         }}
-                        onClick={() => setSelectedImage(img.url)}
+                        onClick={() => setSelectedImage(getImageUrl(img.url))}
                       >
                         <img
-                          src={img.url}
+                          src={getImageUrl(img.url)}
                           alt={img.altText || product.name}
                           className="w-100 h-100"
                           style={{ objectFit: "cover" }}
@@ -157,7 +157,7 @@ export function ProductPage() {
                   style={{ aspectRatio: "1/1", width: "100%" }}
                 >
                   <img
-                    src={selectedImage || primaryImage(product)}
+                    src={getImageUrl(selectedImage) || primaryImage(product)}
                     alt={product.name}
                     className="w-100 h-100"
                     style={{ objectFit: "cover" }}

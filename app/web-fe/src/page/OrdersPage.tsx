@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { notification } from "antd";
 import { cancelOrder, getOrders } from "../api/orders";
 import type { Order } from "../api/types";
-import { formatPrice } from "../lib/products";
+import { formatPrice, getImageUrl } from "../lib/products";
 
 const STATUS_MAP: Record<string, { label: string; badgeClass: string }> = {
   PENDING: { label: "Chờ xác nhận", badgeClass: "bg-warning text-dark" },

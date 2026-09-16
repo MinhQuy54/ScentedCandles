@@ -6,6 +6,7 @@ import {
   deleteAdminProduct,
   fetchAdminProducts,
 } from "../../api/admin-products";
+import { getImageUrl } from "../../lib/products";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Nháp",
@@ -240,7 +241,7 @@ export function AdminProductsPage() {
                         <td>
                           {primaryImage ? (
                             <img
-                              src={primaryImage.url}
+                              src={getImageUrl(primaryImage.url)}
                               alt={primaryImage.altText ?? product.name}
                               className="rounded border"
                               style={{ width: "36px", height: "36px", objectFit: "cover" }}

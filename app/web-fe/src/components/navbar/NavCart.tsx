@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useClickOutsideClose } from './useClickOutsideClose'
 import { useCart } from '../../context/CartContext'
-import { formatPrice } from '../../lib/products'
+import { formatPrice, getImageUrl } from '../../lib/products'
 
 type NavCartProps = {
   open: boolean
@@ -44,7 +44,7 @@ export function NavCart({ open, onToggle, onClose, count = 0 }: NavCartProps) {
             {items.map((item) => (
               <div key={item.productId} className="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom">
                 <img
-                  src={item.product.primaryImage}
+                  src={getImageUrl(item.product.primaryImage)}
                   alt={item.product.name}
                   style={{ width: '45px', height: '45px', objectFit: 'cover' }}
                 />

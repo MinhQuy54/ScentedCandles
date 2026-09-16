@@ -1,4 +1,15 @@
 import type { Product, ProductImage } from '../api/types'
+import { env } from '../config/env'
+
+export function getImageUrl(url?: string | null): string {
+  if (!url) return 'https://placehold.co/600x600?text=AuraScent'
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  const rawUrl = env.apiBaseUrl
+  const apiOrigin = rawUrl.replace(/\/api\/?$/, '')
+  return `${apiOrigin}${url.startsWith('/') ? '' : '/'}${url}`
+}
 
 export function formatPrice(price: string | number) {
   return new Intl.NumberFormat('vi-VN', {
@@ -15,7 +26,7 @@ export function getSortedImages(images?: ProductImage[]): ProductImage[] {
 export function primaryImage(product: Product) {
   const images = getSortedImages(product.images)
   const img = images.find((i) => i.isPrimary) ?? images[0]
-  return img?.url ?? 'https://placehold.co/600x600?text=AuraScent'
+  return getImageUrl(img?.url)
 }
 
 export function secondaryImage(product: Product): string | null {
@@ -23,7 +34,7 @@ export function secondaryImage(product: Product): string | null {
   if (images.length <= 1) return null
   const primary = images.find((i) => i.isPrimary) ?? images[0]
   const secondary = images.find((i) => i !== primary) ?? images[1]
-  return secondary?.url ?? null
+  return secondary?.url ? getImageUrl(secondary.url) : null
 }
 
 export function discountPercent(product: Product): number | null {

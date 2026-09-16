@@ -39,7 +39,7 @@ export class LocalStorageService {
 
         return {
             key,
-            url: `${publicBase}/uploads/${key}`,
+            url: `/uploads/${key}`,
             size: processed.length,
             mimeType: 'image/webp',
         };

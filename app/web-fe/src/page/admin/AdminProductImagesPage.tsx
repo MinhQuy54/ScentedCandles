@@ -8,6 +8,7 @@ import {
     uploadAdminProductImage,
 } from "../../api/admin-product-images";
 import type { Product, ProductImage } from "../../api/types";
+import { getImageUrl } from "../../lib/products";
 
 export function AdminProductImagesPage() {
     const [products, setProducts] = useState<Product[]>([]);

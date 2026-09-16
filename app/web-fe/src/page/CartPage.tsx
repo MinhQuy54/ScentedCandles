@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { formatPrice } from "../lib/products";
+import { formatPrice, getImageUrl } from "../lib/products";
 
 export function CartPage() {
   const { items, totalItems, totalPrice, updateQuantity, removeFromCart } = useCart();
@@ -52,7 +52,7 @@ export function CartPage() {
                     <td>
                       <div className="d-flex gap-3 align-items-center">
                         <img
-                          src={item.product.primaryImage}
+                          src={getImageUrl(item.product.primaryImage)}
                           alt={item.product.name}
                           style={{ width: "55px", height: "55px", objectFit: "cover" }}
                         />
