@@ -23,12 +23,15 @@ import { AdminOrdersPage } from "./page/admin/AdminOrdersPage";
 import { AdminInventoryPage } from "./page/admin/AdminInventoryPage";
 import { AdminProductImagesPage } from "./page/admin/AdminProductImagesPage";
 import { AdminUsersPage } from "./page/admin/AdminUserPage";
-
+import { ReturnPolicyPage } from "./page/ReturnPolicyPage";
+import { ScrollToTop } from "./components/ScrollToTop";
+import { ContactPage } from "./page/ContactPage";
 export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<CatalogPage />} />
@@ -51,6 +54,8 @@ export default function App() {
                 }
               />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/return-policy" element={<ReturnPolicyPage />} />
+              <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />

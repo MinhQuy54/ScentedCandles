@@ -114,13 +114,10 @@ export function Footer() {
                 <Link to="/about">Giới thiệu</Link>
               </li>
               <li>
-                <Link to="/">Chính sách kiểm hàng và đổi trả</Link>
+                <Link to="/return-policy">Chính sách kiểm hàng và đổi trả</Link>
               </li>
               <li>
-                <Link to="/">Chính sách bảo mật</Link>
-              </li>
-              <li>
-                <Link to="/">Liên hệ</Link>
+                <Link to="/contact">Liên hệ</Link>
               </li>
               <li>
                 <Link to="/">Chính sách thanh toán và vận chuyển</Link>

@@ -90,7 +90,36 @@
   transform: scaleX(1);
 }
 
+/* =========================
+   HEADER
+   ========================= */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  transition: transform 0.25s ease-in-out;
+  will-change: transform;
+}
+
+/* Header đang hiện */
+.site-header-visible {
+  transform: translateY(0);
+}
+
+/* Header bị ẩn khi scroll xuống */
+.site-header-hidden {
+  transform: translateY(-100%);
+}
+
+
+/* =========================
+   NAVBAR
+   ========================= */
+
 .site-navbar {
+  background: #fff;
   height: 56px;
   min-height: 56px;
   padding-top: 0;
@@ -2176,3 +2205,26 @@ code {
 .text-danger   { color: var(--color-danger)   !important; }
 .fw-semibold   { font-weight: 600; }
 .fw-bold       { font-weight: 700; }
+
+/* Contact Page Custom Form Input Styling */
+.form-control-custom {
+  background-color: #fcfcfc !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 2px !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  color: #333 !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.form-control-custom:focus {
+  background-color: #ffffff !important;
+  border-color: #b02a2a !important;
+  box-shadow: 0 0 0 1px rgba(176, 42, 42, 0.15) !important;
+}
+
+.form-control-custom::placeholder {
+  color: #a0a0a0 !important;
+  font-size: 14px !important;
+}
