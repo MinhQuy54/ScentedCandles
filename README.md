@@ -24,7 +24,9 @@ AuraScent giải quyết bài toán "rào cản khứu giác" khi mua nến thơ
 
 | Tính năng | Mô tả |
 |---|---|
-| **AI Scent Consultant** | Chatbot tư vấn mùi hương real-time qua Server-Sent Events (SSE), hiểu ngữ cảnh & cảm xúc thay vì chỉ từ khóa |
+| **E-Commerce & Smart Cart** | Đăng ký/đăng nhập (JWT/RBAC), quản lý giỏ hàng thông minh hợp nhất Guest & User qua Redis (**Redis Cart Merging**), thanh toán mã **VietQR/ATM** |
+| **Admin Dashboard** | Giao diện quản trị toàn diện dành cho Admin quản lý Sản phẩm, Danh mục, Tồn kho, Ảnh sản phẩm, Người dùng và Phân quyền (RBAC) |
+| **AI Scent Consultant** | Chatbot tư vấn mùi hương real-time qua Server-Sent Events (SSE), hiểu ngữ cảnh & cảm xúc |
 | **Smart Hybrid Search** | Kết hợp BM25 (Elasticsearch) + Vector Similarity (Qdrant) bằng thuật toán **Reciprocal Rank Fusion (RRF)** |
 | **Anti-Overselling Checkout** | Redis Distributed Lock + PostgreSQL `SELECT FOR UPDATE` đảm bảo kho không bao giờ âm dưới tải cao |
 | **Async Metadata Extraction** | Celery Worker tự động bóc tách Top/Middle/Base Notes và Moods từ mô tả thô bằng LLM |
@@ -35,13 +37,14 @@ AuraScent giải quyết bài toán "rào cản khứu giác" khi mua nến thơ
 ## Kiến trúc hệ thống
 
 ```
-Web Frontend (ReactJS + TS + Vite)
+Web Frontend (ReactJS + TS + Vite + Ant Design)
             │  REST / SSE (HTTP/2)
             ▼
 NestJS API Gateway
  ├─ AuthModule (JWT/RBAC)
- ├─ ProductsModule (Prisma + Redis cache)
+ ├─ ProductsModule (TypeORM + Redis cache)
  ├─ OrdersModule (Redlock + DB Transaction)
+ ├─ CartModule (Redis Cart Merging)
  └─ AiClientModule (gRPC Client)
             │  gRPC / Protobuf
             ▼
@@ -49,38 +52,39 @@ Python AI Engine
  ├─ gRPC Server: StreamAIChat / SmartSearch / ExtractCandleMetadata
  └─ Celery Async Engine: extract_product_metadata / sync_postgres_to_vector_es
             │
-   ┌────────┼──────────┐
-   ▼        ▼           ▼
+    ┌────────┼──────────┐
+    ▼        ▼           ▼
 Elasticsearch  Qdrant   Redis (Broker & Lock)
 (BM25)         (Vector)
 ```
 
 Toàn bộ hệ thống chia làm 2 service chính giao tiếp qua **gRPC**:
-- **API Gateway (NestJS)**: cổng vào cho Frontend, xử lý Auth, E-commerce core, và proxy sang AI Engine.
-- **AI Engine (Python)**: xử lý toàn bộ logic AI (Chatbot streaming, Hybrid Search, Metadata Extraction).
+- **API Gateway (NestJS)**: Cổng vào cho Frontend, xử lý Auth, E-commerce core (dùng **TypeORM**), và proxy sang AI Engine.
+- **AI Engine (Python)**: Xử lý toàn bộ logic AI (Chatbot streaming, Hybrid Search, Metadata Extraction).
 
 ---
 
 ## Tech Stack
 
 **Frontend**
-- ReactJS + TypeScript + Vite
+- React 19 + TypeScript + Vite + Ant Design + Bootstrap
 
 **Backend — API Gateway**
-- NestJS, Prisma ORM, JWT/Passport, ioredis/Redlock, gRPC Client
+- NestJS, TypeORM, PostgreSQL, JWT/Passport, ioredis, gRPC Client
 
 **Backend — AI Engine**
 - Python, gRPC Server, Celery, SentenceTransformer / OpenAI Embedding
 
 **Data & Infrastructure**
 - PostgreSQL (nguồn dữ liệu chính — ACID)
+- Redis (Cache, Session, Cart Merging & Distributed Lock)
 - Elasticsearch (BM25 full-text search)
 - Qdrant (Vector similarity search)
-- Redis (Cache, Message Broker, Distributed Lock)
-- Docker Compose (orchestration)
+- Docker & Docker Compose (Orchestration)
+- Render Cloud Deployment (`render.yaml`)
 
 **Giao tiếp nội bộ**
-- gRPC + Protobuf (`packages/scented-candles.proto`)
+- gRPC + Protobuf (`packages/proto/scented-candles.proto`)
 - Server-Sent Events (SSE) cho luồng chat real-time tới Frontend
 
 ---
@@ -91,27 +95,25 @@ Toàn bộ hệ thống chia làm 2 service chính giao tiếp qua **gRPC**:
 AuraScent/
 ├── app/
 │   ├── web-fe/              # ReactJS + TS + Vite Frontend
+│   │   ├── src/
+│   │   │   ├── components/  # Core UI & AdminRoute Protection
+│   │   │   ├── page/        # Storefront & Admin Dashboard Pages
+│   │   │   └── context/     # CartContext & State Management
 │   ├── api-gateway/         # NestJS API Gateway
 │   │   ├── src/
-│   │   │   ├── auth/
-│   │   │   ├── products/
-│   │   │   ├── orders/
-│   │   │   └── ai-client/
-│   │   └── prisma/
-│   │       └── schema.prisma
+│   │   │   ├── modules/     # Auth, Products, Orders, Cart, Users, Admin, ...
+│   │   │   ├── db/          # TypeORM Entities & Migrations
+│   │   │   └── proto/       # Generated gRPC code
 │   └── ai-engine/           # Python AI Engine
 │       └── src/
 │           ├── grpc_server/
 │           ├── search_engine/
-│           │   ├── es_client.py
-│           │   ├── qdrant_client.py
-│           │   └── rrf_fusion.py
-│           ├── celery_engine/
-│           │   └── tasks.py
-│           └── embedding_service/
+│           └── celery_engine/
 ├── packages/
-│   └── scented-candles.proto   # Protobuf contract dùng chung
-└── docker-compose.yml
+│   └── proto/
+│       └── scented-candles.proto   # Protobuf contract dùng chung
+├── docker-compose.yml
+└── render.yaml               # Render Blueprint deployment config
 ```
 
 ---
@@ -132,7 +134,7 @@ AuraScent/
 ```bash
 git clone <repo-url> AuraScent
 cd AuraScent
-cp .env.example .env   # cấu hình DATABASE_URL, REDIS_URL, OPENAI_API_KEY, v.v.
+cp .env.example .env   # Cấu hình DATABASE_URL, REDIS_URL, OPENAI_API_KEY, v.v.
 ```
 
 ### 2. Khởi động hạ tầng (Postgres, Redis, Qdrant, Elasticsearch)
@@ -147,14 +149,9 @@ docker compose up -d postgres redis qdrant elasticsearch
 docker compose up -d --build ai-engine api-gateway
 ```
 
-### 4. Chạy Prisma Migration
+> **Lưu ý**: `api-gateway` được cấu hình tự động chạy TypeORM Migration (`migrationsRun: true`) khi khởi động ứng dụng.
 
-```bash
-cd app/api-gateway
-npx prisma migrate dev
-```
-
-### 5. (Tuỳ chọn) Chạy Frontend ở chế độ dev
+### 4. (Tuỳ chọn) Chạy Frontend ở chế độ dev
 
 ```bash
 cd app/web-fe
@@ -183,11 +180,12 @@ Sau khi hoàn tất, các service mặc định chạy tại:
 | Method | Path | Auth | Mô tả |
 |---|---|---|---|
 | `POST` | `/api/v1/auth/register` | Không | Đăng ký tài khoản |
-| `POST` | `/api/v1/auth/login` | Không | Đăng nhập, nhận JWT |
-| `GET` | `/api/v1/products` | Không | Danh sách sản phẩm (cache) |
+| `POST` | `/api/v1/auth/login` | Không | Đăng nhập, nhận JWT Token |
+| `GET` | `/api/v1/products` | Không | Danh sách sản phẩm (Search/Filter/Page) |
 | `GET` | `/api/v1/products/:id` | Không | Chi tiết sản phẩm |
-| `POST` | `/api/v1/products` | Admin | Tạo sản phẩm (kích hoạt Celery) |
-| `POST` | `/api/v1/orders` | Customer | Đặt hàng (Redis Lock + Atomic trừ kho) |
+| `POST` | `/api/v1/products` | Admin | Tạo sản phẩm & upload ảnh |
+| `POST` | `/api/v1/orders` | Customer | Đặt hàng & sinh mã VietQR/ATM |
+| `GET` | `/api/v1/admin/*` | Admin | APIs quản trị User, Product, Inventory, Role, Category |
 | `GET` | `/api/v1/ai/search` | Không | Smart Hybrid Search |
 | `GET` | `/api/v1/ai/chat/stream` | Không/Có | SSE Chatbot Stream |
 
@@ -199,7 +197,7 @@ rpc SmartSearch (SearchQuery) returns (SearchResponse);
 rpc ExtractCandleMetadata (ExtractRequest) returns (ExtractResponse);
 ```
 
-Chi tiết đầy đủ message xem tại [`packages/scented-candles.proto`](./packages/scented-candles.proto).
+Chi tiết protobuf message xem tại [`packages/proto/scented-candles.proto`](./packages/proto/scented-candles.proto).
 
 ---
 
@@ -207,12 +205,10 @@ Chi tiết đầy đủ message xem tại [`packages/scented-candles.proto`](./p
 
 | Phase | Nội dung | Trạng thái |
 |---|---|---|
-| **Phase 1** — Monorepo Foundation & Infrastructure | Docker Compose, cấu trúc monorepo, Protobuf contract, Prisma schema | Hoàn thành |
-| **Phase 2** — Core E-commerce & Anti-Overselling Inventory | Auth (JWT/RBAC), Products CRUD, Redlock + Transaction, Stress test chống over-selling | Chưa bắt đầu |
-| **Phase 3** — AI Engine, Hybrid Search & Async Pipeline | gRPC Server, RRF Search Engine, Celery Metadata Extraction | Chưa bắt đầu |
-| **Phase 4** — Integration, Real-time Chatbot (SSE) & Frontend UI | SSE Gateway, React UI (Catalog/Cart/Search/Chatbot), Circuit Breaker, E2E Testing | Chưa bắt đầu |
-
-> Trạng thái chi tiết theo từng task: xem tài liệu kiến trúc nội bộ (BMAD Framework doc).
+| **Phase 1** — Foundation & Infrastructure | Docker Compose, Monorepo structure, Protobuf contract, TypeORM Entities & Migrations | ✅ Hoàn thành |
+| **Phase 2** — Core E-Commerce & Admin UI | Auth (JWT/RBAC), Cart Merging (Redis), Orders & VietQR Checkout, Admin Dashboard UI | ✅ Hoàn thành |
+| **Phase 3** — AI Engine, Hybrid Search & Async Pipeline | gRPC Server, RRF Search Engine (BM25 + Qdrant), Celery Metadata Extraction | 🔄 Đang phát triển |
+| **Phase 4** — Real-time Chatbot (SSE) & E2E Testing | SSE Gateway, React Chatbot UI Component, Circuit Breaker, E2E Testing | ⏳ Sắp tới |
 
 ---
 
@@ -226,14 +222,6 @@ Chi tiết đầy đủ message xem tại [`packages/scented-candles.proto`](./p
 | Checkout throughput | 1.000+ TPS (flash sale) |
 | Data sync (PostgreSQL → ES/Qdrant) | < 2s (Eventual Consistency) |
 | Over-selling | Tuyệt đối bằng 0 |
-
----
-
-## Ghi chú kiến trúc
-
-- **Đồng bộ dữ liệu**: dùng mô hình Transactional Outbox / Event-driven qua Celery Queue — khi Product chuyển `ACTIVE`, hệ thống tự sinh embedding và đẩy sang Elasticsearch + Qdrant.
-- **Circuit Breaker**: khi tỉ lệ lỗi gRPC > 50% trong 10s, hệ thống tự động mở circuit và fallback Search sang PostgreSQL ILIKE/Full-text Search.
-- **Retry Policy**: tối đa 3 lần, Exponential Backoff (100ms → 200ms → 400ms).
 
 ---
 
