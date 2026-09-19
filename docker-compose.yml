@@ -65,6 +65,20 @@ services:
       - qdrant
       - elasticsearch
 
+  ai-chatbot:
+    build:
+      context: ./app/ai-engine
+      dockerfile: src/chatbot/Dockerfile
+    container_name: scented-candles-ai-chatbot
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./app/ai-engine/.env
+    depends_on:
+      - postgres
+      - qdrant
+
   api-gateway:
     build:
       context: ./app/api-gateway

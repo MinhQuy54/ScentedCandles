@@ -247,41 +247,36 @@ export function ProductPage() {
                   </p>
                 </>
               )}
-              <div className="mt-4">
-                <h3 className="fw-bold mb-2 text-dark" style={{ fontSize: "16px" }}>
-                  THÔNG TIN SẢN PHẨM:
-                </h3>
-                {product.rawDescription.trim().startsWith('<') ? (
-                  <div
-                    className="product-description text-secondary"
-                    style={{ fontSize: "14px", lineHeight: "1.7" }}
-                    dangerouslySetInnerHTML={{ __html: product.rawDescription }}
-                  />
-                ) : (
-                  <div className="product-description text-secondary" style={{ fontSize: "14px", lineHeight: "1.0" }}>
-                    <ul className="list-unstyled mb-0">
-                      {product.rawDescription.split('\n').map((line, idx) => {
-                        const trimmed = line.trim();
-                        if (!trimmed) return null;
-                        const cleanLine = trimmed.replace(/^[•\-\*\s]+/, '').trim();
-                        if (trimmed.toUpperCase().startsWith('THÔNG TIN SẢN PHẨM')) {
+              {product.rawDescription && product.rawDescription.trim() && (
+                <div className="mt-4">
+                  <h3 className="fw-bold mb-2 text-dark" style={{ fontSize: "16px" }}>
+                    CHI TIẾT SẢN PHẨM:
+                  </h3>
+                  {product.rawDescription.trim().startsWith('<') ? (
+                    <div
+                      className="product-description text-secondary"
+                      style={{ fontSize: "14px", lineHeight: "1.7" }}
+                      dangerouslySetInnerHTML={{ __html: product.rawDescription }}
+                    />
+                  ) : (
+                    <div className="product-description text-secondary" style={{ fontSize: "14px", lineHeight: "1.6" }}>
+                      <ul className="list-unstyled mb-0">
+                        {product.rawDescription.split('\n').map((line, idx) => {
+                          const trimmed = line.trim();
+                          if (!trimmed) return null;
+                          const cleanLine = trimmed.replace(/^[•\-\*\s]+/, '').trim();
                           return (
-                            <li key={idx} className="fw-bold text-dark mt-3 mb-2" style={{ fontSize: "14px", letterSpacing: "0.03em" }}>
-                              {trimmed}
+                            <li key={idx} className="mb-2 d-flex align-items-start gap-2">
+                              <span style={{ color: '#333', fontSize: '1rem', lineHeight: '1.4' }}>•</span>
+                              <span style={{ flex: 1 }}>{cleanLine}</span>
                             </li>
                           );
-                        }
-                        return (
-                          <li key={idx} className="mb-2 d-flex align-items-start gap-2">
-                            <span style={{ color: '#333', fontSize: '1rem', lineHeight: '1.4' }}>•</span>
-                            <span style={{ flex: 1 }}>{cleanLine}</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </div>
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
               <CandleUsageGuide
                 categoryName={product.category?.name}
                 productName={product.name}
