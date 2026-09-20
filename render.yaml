@@ -33,7 +33,7 @@ services:
       - key: PUBLIC_BASE_URL
         value: "https://scented-candles-api-gateway.onrender.com"
       - key: AI_CHATBOT_URL
-        value: "http://scented-candles-ai-chatbot:8000"
+        value: "https://scented-candles-ai-chatbot.onrender.com"
       - key: JWT_SECRET
         generateValue: true
 
