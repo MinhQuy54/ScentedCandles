@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   Injectable,
   Logger,
+  OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -9,10 +10,28 @@ import { Readable } from 'node:stream';
 import type { Response } from 'express';
 
 @Injectable()
-export class AiService {
+export class AiService implements OnModuleInit {
   private readonly logger = new Logger(AiService.name);
 
   constructor(private readonly configService: ConfigService) { }
+
+  onModuleInit() {
+    // Tự động ping giữ ấm chatbot service mỗi 10 phút (Render free plan ngủ sau 15 phút)
+    const TEN_MINUTES = 10 * 60 * 1000;
+    setInterval(() => this.keepAliveChatbot(), TEN_MINUTES);
+    setTimeout(() => this.keepAliveChatbot(), 5000);
+  }
+
+  private async keepAliveChatbot(): Promise<void> {
+    const baseUrl = this.configService
+      .get<string>('AI_CHATBOT_URL', 'http://127.0.0.1:8000')
+      .replace(/\/$/, '');
+    try {
+      await fetch(`${baseUrl}/health`).catch(() => { });
+    } catch {
+      // Ignore background keep-alive errors
+    }
+  }
 
   async streamChat(
     message: string,
