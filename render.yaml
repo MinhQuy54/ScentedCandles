@@ -32,6 +32,11 @@ services:
         value: "https://aurascent-eight.vercel.app"
       - key: PUBLIC_BASE_URL
         value: "https://scented-candles-api-gateway.onrender.com"
+      - key: AI_CHATBOT_URL
+        fromService:
+          type: web
+          name: scented-candles-ai-chatbot
+          property: url
       - key: JWT_SECRET
         generateValue: true
 
@@ -54,6 +59,27 @@ services:
     name: scented-candles-redis
     plan: free
     ipAllowList: []
+
+  # 4. AI Chatbot (FastAPI Streaming Service)
+  - type: web
+    name: scented-candles-ai-chatbot
+    runtime: docker
+    rootDir: app/ai-engine
+    dockerfilePath: src/chatbot/Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: FRONTEND_URL
+        value: "https://aurascent-eight.vercel.app"
+      - key: QDRANT_COLLECTION_NAME
+        value: "aurascent_products"
+      - key: API_KEY
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
 
 databases:
   # 4. PostgreSQL Database
