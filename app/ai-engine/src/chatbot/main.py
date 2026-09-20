@@ -16,23 +16,27 @@ except ImportError:
 
 load_dotenv(find_dotenv())
 
-api_key = os.getenv("API_KEY")
-qdrant_url = os.getenv("QDRANT_URL")
-qdrant_api_key = os.getenv("QDRANT_API_KEY")
 collection_name = os.getenv("QDRANT_COLLECTION_NAME", "aurascent_products")
 
-if not api_key:
-    raise ValueError("Chưa tìm thấy API_KEY trong file .env!")
-if not qdrant_url:
-    raise ValueError("Chưa tìm thấy QDRANT_URL trong file .env!")
-if not qdrant_api_key:
-    raise ValueError("Chưa tìm thấy QDRANT_API_KEY trong file .env!")
 
-client = genai.Client(api_key=api_key)
-qdrant_client = QdrantClient(
-    url=qdrant_url,
-    api_key=qdrant_api_key,
-)
+def get_clients():
+    api_key = os.getenv("API_KEY")
+    qdrant_url = os.getenv("QDRANT_URL")
+    qdrant_api_key = os.getenv("QDRANT_API_KEY")
+
+    if not api_key:
+        raise ValueError("Chưa tìm thấy API_KEY trong biến môi trường!")
+    if not qdrant_url:
+        raise ValueError("Chưa tìm thấy QDRANT_URL trong biến môi trường!")
+    if not qdrant_api_key:
+        raise ValueError("Chưa tìm thấy QDRANT_API_KEY trong biến môi trường!")
+
+    client = genai.Client(api_key=api_key)
+    qdrant_client = QdrantClient(
+        url=qdrant_url,
+        api_key=qdrant_api_key,
+    )
+    return client, qdrant_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -130,9 +134,10 @@ async def chat_with_aurascent(request: ChatRequest):
     user_query = request.message
     logger.info("Đang xử lý câu hỏi: %s", user_query)
     try:
+        genai_client, qdrant_client = get_clients()
         query_vector = await asyncio.to_thread(
             embed_text,
-            client,
+            genai_client,
             user_query,
             "RETRIEVAL_QUERY",
         )
