@@ -91,10 +91,12 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       - REDIS_HOST=redis
       - AI_SERVICE_GRPC_URL=ai-engine:50051
+      - AI_CHATBOT_URL=http://ai-chatbot:8000
     depends_on:
       - postgres
       - redis
       - ai-engine
+      - ai-chatbot
 
   web-fe:
     build:

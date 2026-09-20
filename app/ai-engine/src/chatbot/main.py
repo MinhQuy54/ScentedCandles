@@ -43,8 +43,12 @@ logger = logging.getLogger(__name__)
 
 async def call_api_gemini(prompt: str):
     models = [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
+        name.strip()
+        for name in os.getenv(
+            "GEMINI_CHAT_MODELS",
+            "gemini-3.6-flash,gemini-2.5-flash",
+        ).split(",")
+        if name.strip()
     ]
     
     for model in models:
@@ -55,9 +59,13 @@ async def call_api_gemini(prompt: str):
             )
             found_content = False
             for chunk in response:
-                if chunk.text:
+                try:
+                    text = chunk.text
+                except Exception:
+                    continue
+                if text:
                     found_content = True
-                    yield chunk.text
+                    yield text
                     await asyncio.sleep(0.01)
             if found_content:
                 return
@@ -97,6 +105,10 @@ if not cors_allowed_origins:
         "http://127.0.0.1:8080",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://localhost:80",
+        "http://127.0.0.1:80",
     }
 
 app.add_middleware(
