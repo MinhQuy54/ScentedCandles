@@ -45,7 +45,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def call_api_gemini(prompt: str):
+async def call_api_gemini(genai_client: genai.Client, prompt: str):
     models = [
         name.strip()
         for name in os.getenv(
@@ -57,7 +57,7 @@ async def call_api_gemini(prompt: str):
     
     for model in models:
         try:
-            response = client.models.generate_content_stream(
+            response = genai_client.models.generate_content_stream(
                 model=model,
                 contents=prompt,
             )
@@ -170,7 +170,7 @@ async def chat_with_aurascent(request: ChatRequest):
             Trả lời:
             """
         return StreamingResponse(
-            call_api_gemini(prompt),
+            call_api_gemini(genai_client, prompt),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache, no-store, must-revalidate",
