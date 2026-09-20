@@ -159,11 +159,15 @@ async def chat_with_aurascent(request: ChatRequest):
                     context_data += f"[SẢN PHẨM]: {p.get('content')} - Giá: {m.get('price', 'Liên hệ')} VNĐ{inventory_info}\n"
         
         prompt = f"""
-            Bạn là một nhân viên tư vấn bán hàng thân thiện của cửa hàng nến thơm Aurascent.
-            Dựa vào thông tin sản phẩm dưới đây, hãy trả lời câu hỏi của khách hàng một cách tự nhiên.
-            Nếu không có sản phẩm phù hợp, hãy lịch sự báo cho khách biết.
-            Trả lời bằng văn bản thuần, không dùng markdown, không dùng dấu * và không dùng ký hiệu bullet.
-            Thông tin sản phẩm đang có:
+            Bạn là tư vấn viên của cửa hàng nến thơm AuraScent.
+            Hãy trả lời câu hỏi của khách hàng một cách tự nhiên, ngắn gọn và đúng trọng tâm dựa trên thông tin dưới đây.
+
+            QUY TẮC BẮT BUỘC:
+            1. Trả lời đi thẳng vào vấn đề. KHÔNG chào hỏi rườm rà, KHÔNG lặp lại câu chào mừng hay tự giới thiệu lại tên cửa hàng/trợ lý ở đầu mỗi câu trả lời.
+            2. Trả lời bằng văn bản thuần (plain text), KHÔNG dùng định dạng markdown, KHÔNG dùng dấu *, KHÔNG dùng ký hiệu gạch đầu dòng (bullet points).
+            3. Nếu không tìm thấy thông tin phù hợp, hãy thông báo lịch sự cho khách biết.
+
+            Thông tin tham khảo:
             {context_data}
 
             Câu hỏi của khách: {user_query}
