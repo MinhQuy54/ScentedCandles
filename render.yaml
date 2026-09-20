@@ -33,10 +33,7 @@ services:
       - key: PUBLIC_BASE_URL
         value: "https://scented-candles-api-gateway.onrender.com"
       - key: AI_CHATBOT_URL
-        fromService:
-          type: web
-          name: scented-candles-ai-chatbot
-          property: url
+        value: "http://scented-candles-ai-chatbot:8000"
       - key: JWT_SECRET
         generateValue: true
 
