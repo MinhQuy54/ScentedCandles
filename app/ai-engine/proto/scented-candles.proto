@@ -4,25 +4,11 @@ package scented_candles.ai.v1;
 
 // Service xử lý toàn bộ logic AI & Search nội bộ
 service ScentedCandlesAIService {
-  // 1. Chatbot Tư Vấn (Server Streaming RPC): Trả về từng đoạn chữ real-time (hiệu ứng typing)
-  rpc StreamAIChat (ChatRequest) returns (stream ChatChunk);
-
-  // 2. Hybrid Search (Simple RPC): Kết hợp Full-text (Elasticsearch) + Vector (Qdrant)
+  // 1. Hybrid Search (Unary RPC): Kết hợp Full-text (Elasticsearch) + Vector (Qdrant) bằng thuật toán RRF
   rpc SmartSearch (SearchQuery) returns (SearchResponse);
 
-  // 3. Metadata Extraction (Simple RPC): Bóc tách thuộc tính nến thơm khi Admin tạo sản phẩm
+  // 2. Metadata Extraction (Unary RPC): Bóc tách thuộc tính nến thơm (Top/Middle/Base Notes, Moods) khi Admin tạo sản phẩm
   rpc ExtractCandleMetadata (ExtractRequest) returns (ExtractResponse);
-}
-
-message ChatRequest {
-  string user_id = 1;
-  string message = 2;
-  repeated string chat_history = 3; // Ngữ cảnh câu hỏi trước đó
-}
-
-message ChatChunk {
-  string delta_text = 1; // Từng cụm từ trả về real-time
-  bool is_finished = 2;  // Cờ báo hiệu kết thúc stream
 }
 
 message SearchQuery {
