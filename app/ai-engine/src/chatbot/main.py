@@ -1,7 +1,8 @@
 import os
 import logging
 import asyncio
-from fastapi import FastAPI, HTTPException
+import threading
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -50,7 +51,7 @@ async def call_api_gemini(genai_client: genai.Client, prompt: str):
         name.strip()
         for name in os.getenv(
             "GEMINI_CHAT_MODELS",
-            "gemini-3.6-flash,gemini-2.5-flash",
+            "gemini-flash-lite-latest,gemini-flash-latest",
         ).split(",")
         if name.strip()
     ]
@@ -123,6 +124,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class SyncTaskRequest(BaseModel):
+    product_id: str
+    action: str = "UPSERT"  # 'UPSERT' hoặc 'DELETE'
+
+
+@app.post("/tasks/sync-product")
+async def trigger_sync_product(req: SyncTaskRequest):
+    """Trigger đồng bộ sản phẩm sang Qdrant thông qua Celery Worker"""
+    logger.info(f"[Sync] Nhận trigger Celery product_id={req.product_id}, action={req.action}")
+    try:
+        from src.celery_engine.sync_tasks import sync_product_to_qdrant_task
+        task = sync_product_to_qdrant_task.delay(product_id=req.product_id, action=req.action)
+        return {
+            "status": "QUEUED",
+            "task_id": task.id,
+            "product_id": req.product_id,
+            "action": req.action
+        }
+    except Exception as e:
+        logger.error(f"[Sync] Lỗi khi gửi task vào Celery Broker: {e}")
+        raise HTTPException(status_code=500, detail=f"Không thể gửi Celery task: {str(e)}")
 
 @app.get("/health")
 async def health_check():

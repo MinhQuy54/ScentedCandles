@@ -20,6 +20,7 @@ import { OutProductListDto } from './dto/out-product-list.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Category } from '../category/entities/category.entity';
+import { async } from 'rxjs';
 
 @Injectable()
 export class ProductsService {
@@ -27,7 +28,22 @@ export class ProductsService {
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
+
+  private async triggerAiSync(productId: string, action: 'UPSERT' | 'DELETE' = 'UPSERT') {
+    const aiUrl = process.env.AI_ENGINE_URL || process.env.AI_CHATBOT_URL || 'http://localhost:8000';
+    try {
+      await fetch(`${aiUrl}/tasks/sync-product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId, action }),
+      });
+    } catch (err) {
+      // Log warning, không block response của Admin nếu AI Engine tạm thời offline
+      console.warn(`[ProductsService] Không thể gửi sync trigger cho product ${productId}:`, err);
+    }
+  }
+
 
   async findAll(
     query: QueryProductsDto,
@@ -164,6 +180,7 @@ export class ProductsService {
       }
 
       await queryRunner.commitTransaction();
+      this.triggerAiSync(product.id, 'UPSERT');
       return ResponseCommon.created(product, 'CREATE_PRODUCT_SUCCESS');
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -214,6 +231,7 @@ export class ProductsService {
     }
 
     const saved = await this.productRepo.save(product);
+    this.triggerAiSync(id, 'UPSERT');
     return ResponseCommon.ok(saved, 'UPDATE_PRODUCT_SUCCESS');
   }
 
@@ -239,6 +257,7 @@ export class ProductsService {
       await queryRunner.manager.softDelete(Product, id);
 
       await queryRunner.commitTransaction();
+      this.triggerAiSync(id, 'DELETE');
       return ResponseCommon.ok(
         { id, deleted_at: now },
         'DELETE_PRODUCT_SUCCESS',
@@ -322,3 +341,4 @@ export class ProductsService {
     }
   }
 }
+
