@@ -24,7 +24,7 @@ export class AiService implements OnModuleInit {
 
   private async keepAliveChatbot(): Promise<void> {
     const baseUrl = this.configService
-      .get<string>('AI_CHATBOT_URL', 'http://127.0.0.1:8000')
+      .get<string>('AI_CHATBOT_URL', 'http://127.0.0.1:8001')
       .replace(/\/$/, '');
     try {
       await fetch(`${baseUrl}/health`).catch(() => { });
@@ -39,7 +39,7 @@ export class AiService implements OnModuleInit {
     signal?: AbortSignal,
   ): Promise<void> {
     const baseUrl = this.configService
-      .get<string>('AI_CHATBOT_URL', 'http://127.0.0.1:8000')
+      .get<string>('AI_CHATBOT_URL', 'http://127.0.0.1:8001')
       .replace(/\/$/, '');
 
     let upstream: globalThis.Response;
