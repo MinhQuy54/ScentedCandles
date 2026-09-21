@@ -59,7 +59,7 @@ services:
     plan: free
     ipAllowList: []
 
-  # 4. AI Chatbot (FastAPI Streaming Service)
+  # 4. AI Chatbot + Celery Worker (FastAPI Streaming + Celery Worker Combo Container)
   - type: web
     name: scented-candles-ai-chatbot
     runtime: docker
@@ -89,34 +89,8 @@ services:
       - key: QDRANT_API_KEY
         sync: false
 
-  # 5. Celery Worker (Background Worker Service for Qdrant Sync)
-  - type: worker
-    name: scented-candles-celery-worker
-    runtime: docker
-    rootDir: app/ai-engine
-    dockerfilePath: src/chatbot/Dockerfile.celery
-    plan: free
-    envVars:
-      - key: QDRANT_COLLECTION_NAME
-        value: "aurascent_products"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: scented-candles-postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: scented-candles-redis
-          property: connectionString
-      - key: API_KEY
-        sync: false
-      - key: QDRANT_URL
-        sync: false
-      - key: QDRANT_API_KEY
-        sync: false
-
 databases:
-  # 6. PostgreSQL Database
+  # 5. PostgreSQL Database
   - name: scented-candles-postgres
     databaseName: scented_candles
     user: scented_user
