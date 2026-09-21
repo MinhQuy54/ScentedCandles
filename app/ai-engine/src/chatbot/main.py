@@ -53,18 +53,33 @@ async def call_api_gemini(genai_client: genai.Client, prompt: str):
             "GEMINI_CHAT_MODELS",
             "gemini-flash-lite-latest,gemini-flash-latest",
         ).split(",")
-        if name.strip() and name.strip() != "gemini-3.6-flash"
+        if name.strip() and name.strip() not in ("gemini-3.6-flash", "gemini-2.5-flash")
     ]
     models = ["gemini-flash-lite-latest"] + [m for m in raw_models if m != "gemini-flash-lite-latest"]
-    
+
+    STREAM_TIMEOUT = float(os.getenv("GEMINI_STREAM_TIMEOUT", "12"))  # seconds per model
+
     for model in models:
         try:
-            response = genai_client.models.generate_content_stream(
-                model=model,
-                contents=prompt,
-            )
+            loop = asyncio.get_event_loop()
+
+            def do_stream():
+                return list(genai_client.models.generate_content_stream(
+                    model=model,
+                    contents=prompt,
+                ))
+
+            try:
+                chunks = await asyncio.wait_for(
+                    loop.run_in_executor(None, do_stream),
+                    timeout=STREAM_TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                logger.warning(f"[Chatbot] Model {model} bị timeout sau {STREAM_TIMEOUT}s, chuyển sang model tiếp theo...")
+                continue
+
             found_content = False
-            for chunk in response:
+            for chunk in chunks:
                 try:
                     text = chunk.text
                 except Exception:
@@ -72,13 +87,17 @@ async def call_api_gemini(genai_client: genai.Client, prompt: str):
                 if text:
                     found_content = True
                     yield text
-                    await asyncio.sleep(0.01)
+                    await asyncio.sleep(0.005)
+
             if found_content:
                 return
+
         except Exception as e:
             logger.error(f"Lỗi model {model}: {str(e)}")
-            continue 
+            continue
+
     yield "Hiện tại hệ thống AI đang quá tải. Quý khách vui lòng thử lại sau vài giây nhé!"
+
 
 
 class ChatRequest(BaseModel):
