@@ -47,14 +47,15 @@ logger = logging.getLogger(__name__)
 
 
 async def call_api_gemini(genai_client: genai.Client, prompt: str):
-    models = [
+    raw_models = [
         name.strip()
         for name in os.getenv(
             "GEMINI_CHAT_MODELS",
             "gemini-flash-lite-latest,gemini-flash-latest",
         ).split(",")
-        if name.strip()
+        if name.strip() and name.strip() != "gemini-3.6-flash"
     ]
+    models = ["gemini-flash-lite-latest"] + [m for m in raw_models if m != "gemini-flash-lite-latest"]
     
     for model in models:
         try:
