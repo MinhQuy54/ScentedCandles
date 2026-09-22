@@ -7,7 +7,7 @@ import { Product } from '../products/entities/product.entity';
 import { RedisModule } from '../redis/redis.module';
 import { OrderItem } from './entities/order-item.entity';
 import { Order } from './entities/order.entity';
-import { AdminOrdersController, OrdersController } from './orders.controller';
+import { AdminOrdersController, OrdersController, PaymentsWebhookController } from './orders.controller';
 import { OrdersService } from './orders.service';
 
 @Module({
@@ -18,8 +18,8 @@ import { OrdersService } from './orders.service';
     CartModule,
     RedisModule,
   ],
-  controllers: [OrdersController, AdminOrdersController],
+  controllers: [OrdersController, AdminOrdersController, PaymentsWebhookController],
   providers: [OrdersService],
   exports: [OrdersService],
 })
-export class OrdersModule {}
+export class OrdersModule { }

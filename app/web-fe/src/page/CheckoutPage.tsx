@@ -337,7 +337,7 @@ export function CheckoutPage() {
                     <div className="col-md-5 text-center">
                       <div className="vietqr-card">
                         <img
-                          src={`https://img.vietqr.io/image/${BANK_INFO.bankId}-${BANK_INFO.accountNo}-compact2.png?amount=${finalTotal}&addInfo=${encodeURIComponent(`${phone} - Thanh toan AuraScent`)}&accountName=${encodeURIComponent(BANK_INFO.accountName)}`}
+                          src={`https://img.vietqr.io/image/${BANK_INFO.bankId}-${BANK_INFO.accountNo}-compact2.png?amount=${finalTotal}&addInfo=${encodeURIComponent(`${phone || 'AuraScent'} - Thanh toan AuraScent`)}&accountName=${encodeURIComponent(BANK_INFO.accountName)}`}
                           alt="Mã QR Chuyển khoản VietQR"
                           className="img-fluid"
                           style={{ maxWidth: "170px" }}

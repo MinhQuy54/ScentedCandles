@@ -16,6 +16,7 @@ import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { OrderItem } from './entities/order-item.entity';
 import { Order } from './entities/order.entity';
 import { ResponseCommon } from 'src/common/dto/response.dto';
+import { SepayWebhookDto } from './dto/sepay-webhook.dto';
 
 @Injectable()
 export class OrdersService {
@@ -32,6 +33,54 @@ export class OrdersService {
     private readonly redisService: RedisService,
     private readonly dataSource: DataSource,
   ) { }
+
+  async handleSepayWebhook(dto: SepayWebhookDto): Promise<{
+    success: boolean; message: string
+  }> {
+    if (dto.transferType !== 'in') {
+      return {
+        success: true, message: 'Bỏ qua giao dịch tiền ra'
+      }
+    }
+    const orderMatch = dto.content.match(/ORD-\d+-\d+/i);
+
+    if (!orderMatch) {
+      return {
+        success: true, message: 'Không tìm thấy mã đơn hàng trong nội dung giao dịch'
+      }
+    }
+
+    const orderNumber = orderMatch[0].toUpperCase();
+    const order = await this.orderRepo.findOne({
+      where: { orderNumber },
+    });
+
+    if (!order)
+      throw new NotFoundException(`Không tìm thấy đơn hàng với mã ${orderNumber}`);
+
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      return { success: true, message: `Đơn hàng ${orderNumber} đã được thanh toán từ trước.` };
+    }
+
+    const totalAmountNum = parseFloat(order.totalAmount);
+
+    if (dto.transferAmount < totalAmountNum) {
+      throw new BadRequestException(
+        `Số tiền chuyển (${dto.transferAmount}) ít hơn tổng tiền đơn hàng (${totalAmountNum})`,
+      );
+    }
+
+    order.paymentStatus = PaymentStatus.PAID;
+    order.status = OrderStatus.PROCESSING;
+
+    await this.orderRepo.save(order);
+    console.log(`[VietQR Webhook] Đơn hàng ${orderNumber} đã tự động đổi trạng thái sang PAID!`);
+    return {
+      success: true,
+      message: `Thanh toán thành công cho đơn hàng ${orderNumber}`,
+    };
+
+  }
 
   async createOrder(userId: string, dto: CreateOrderDto): Promise<ResponseCommon<Order>> {
     let recipientName = dto.recipientName;
@@ -158,7 +207,8 @@ export class OrdersService {
         // Clear Redis cart for logged-in user
         await this.cartService.clearCart(userId).catch(() => null);
 
-        return ResponseCommon.created(savedOrder, 'CREATE_ORDER_SUCCESS');
+        const paymentInfo = this.getVietQrPaymentInfo(savedOrder.orderNumber, totalAmountNum);
+        return ResponseCommon.created({ ...savedOrder, paymentInfo }, 'CREATE_ORDER_SUCCESS');
       } catch (err) {
         await queryRunner.rollbackTransaction();
         throw err;
@@ -173,6 +223,23 @@ export class OrdersService {
     }
   }
 
+  getVietQrPaymentInfo(orderNumber: string, amount: number) {
+    const bankId = process.env.VIETQR_BANK_ID || 'MB';
+    const accountNo = process.env.VIETQR_ACCOUNT_NO || '000000000000';
+    const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGO MINH QUY';
+
+    const qrCodeUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${orderNumber}&accountName=${encodeURIComponent(accountName)}`;
+
+    return {
+      bankId,
+      accountNo,
+      accountName,
+      transferContent: orderNumber,
+      amount,
+      qrCodeUrl,
+    };
+  }
+
   async getUserOrders(userId: string): Promise<ResponseCommon<Order[]>> {
     const data = await this.orderRepo.find({
       where: { userId },
@@ -182,7 +249,7 @@ export class OrdersService {
     return ResponseCommon.ok(data, 'OK');
   }
 
-  async getOrderById(userId: string, orderId: string): Promise<ResponseCommon<Order>> {
+  async getOrderById(userId: string, orderId: string): Promise<ResponseCommon<any>> {
     const order = await this.orderRepo.findOne({
       where: { id: orderId, userId },
       relations: { items: { product: true } },
@@ -191,7 +258,8 @@ export class OrdersService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
-    return ResponseCommon.ok(order, 'OK');
+    const paymentInfo = this.getVietQrPaymentInfo(order.orderNumber, parseFloat(order.totalAmount));
+    return ResponseCommon.ok({ ...order, paymentInfo }, 'OK');
   }
 
   async cancelOrder(userId: string, orderId: string): Promise<ResponseCommon<Order>> {
