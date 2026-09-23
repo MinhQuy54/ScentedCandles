@@ -166,6 +166,8 @@ async def trigger_sync_product(req: SyncTaskRequest):
         logger.error(f"[Sync] Lỗi khi gửi task vào Celery Broker: {e}")
         raise HTTPException(status_code=500, detail=f"Không thể gửi Celery task: {str(e)}")
 
+
+@app.head("/health")
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}

@@ -57,8 +57,9 @@ export class AiService implements OnModuleInit {
       if (signal?.aborted) {
         return;
       }
+      const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(
-        'Không kết nối được chatbot',
+        `Không kết nối được chatbot tại ${baseUrl}: ${msg}`,
         error instanceof Error ? error.stack : undefined,
       );
       throw new ServiceUnavailableException('Chatbot đang không khả dụng');
