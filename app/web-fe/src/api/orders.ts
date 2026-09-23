@@ -15,9 +15,16 @@ export async function getOrders(): Promise<Order[]> {
     const res = await request<Order[]>('/orders');
     return res.data;
 }
+
+export async function getOrderById(id: string): Promise<Order> {
+    const res = await request<Order>(`/orders/${id}`);
+    return res.data;
+}
+
 export async function cancelOrder(id: string): Promise<Order> {
     const res = await request<Order>(`/orders/${id}/cancel`, {
         method: 'POST',
     });
     return res.data;
 }
+

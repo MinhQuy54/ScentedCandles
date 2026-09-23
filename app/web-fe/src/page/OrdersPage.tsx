@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { notification } from "antd";
 import { cancelOrder, getOrders } from "../api/orders";
@@ -24,15 +24,45 @@ const PAYMENT_METHOD_MAP: Record<string, string> = {
   BANK_TRANSFER: "Chuyển khoản ngân hàng / VietQR",
 };
 
+const BANK_INFO = {
+  bankId: "MB",
+  bankName: "MBBank (Ngân hàng Quân Đội)",
+  accountNo: "0325367066",
+  accountName: "NGO MINH QUY",
+};
+
 export function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Ref to hold current orders for polling comparison
+  const ordersRef = useRef<Order[]>([]);
+  ordersRef.current = orders;
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    notification.success({
+      message: "Đã sao chép",
+      description: `Đã sao chép ${label}: ${text}`,
+      placement: "topRight",
+      duration: 2,
+    });
+  };
+
+  // Initial load & URL params check
   useEffect(() => {
     getOrders()
-      .then(setOrders)
+      .then((data) => {
+        setOrders(data);
+        // Auto expand newly placed order if query param exists
+        const orderNumber = searchParams.get("orderNumber");
+        if (orderNumber) {
+          const match = data.find((o) => o.orderNumber === orderNumber);
+          if (match) setExpandedId(match.id);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
 
@@ -41,7 +71,7 @@ export function OrdersPage() {
     if (isSuccess === "true" && orderNumber) {
       notification.success({
         message: "Đặt hàng thành công!",
-        description: `Đơn hàng #${orderNumber} của bạn đã được khởi tạo thành công.`,
+        description: `Đơn hàng #${orderNumber} của bạn đã được khởi tạo thành công. Vui lòng quét mã VietQR để thanh toán.`,
         placement: "topRight",
         duration: 5,
       });
@@ -50,6 +80,35 @@ export function OrdersPage() {
       setSearchParams(searchParams, { replace: true });
     }
   }, []);
+
+  // Polling mechanism for PENDING orders
+  useEffect(() => {
+    const hasPendingOrders = orders.some((o) => o.paymentStatus === "PENDING");
+    if (!hasPendingOrders) return;
+
+    const interval = setInterval(() => {
+      getOrders()
+        .then((latestOrders) => {
+          const prevOrders = ordersRef.current;
+          latestOrders.forEach((newOrder) => {
+            const oldOrder = prevOrders.find((o) => o.id === newOrder.id);
+            if (oldOrder && oldOrder.paymentStatus === "PENDING" && newOrder.paymentStatus === "PAID") {
+              notification.success({
+                message: "Thanh toán thành công!",
+                description: `Hệ thống SePAY đã xác nhận thanh toán cho đơn hàng #${newOrder.orderNumber}. Đơn hàng đã được chuyển sang trạng thái Đang xử lý!`,
+                placement: "topRight",
+                duration: 8,
+              });
+            }
+          });
+
+          setOrders(latestOrders);
+        })
+        .catch(console.error);
+    }, 4000); // Check every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [orders]);
 
   const handleCancel = async (id: string) => {
     if (confirm("Bạn muốn hủy đơn hàng này?")) {
@@ -103,7 +162,7 @@ export function OrdersPage() {
             <i className="bi bi-bag-x fs-1 d-block mb-3 text-secondary"></i>
             <p className="mb-4 fs-6">Bạn chưa có đơn hàng nào.</p>
             <div>
-              <Link to="/products" className="btn catalog-see-more">
+              <Link to="/" className="btn catalog-see-more">
                 Mua sắm ngay
               </Link>
             </div>
@@ -123,6 +182,9 @@ export function OrdersPage() {
                 day: "numeric",
               });
 
+              const isPendingBank = o.paymentMethod === "BANK_TRANSFER" && o.paymentStatus === "PENDING";
+              const qrCodeUrl = `https://img.vietqr.io/image/${BANK_INFO.bankId}-${BANK_INFO.accountNo}-compact2.png?amount=${o.totalAmount}&addInfo=${o.orderNumber}&accountName=${encodeURIComponent(BANK_INFO.accountName)}`;
+
               return (
                 <div key={o.id} className="card rounded-0 shadow-sm overflow-hidden">
                   {/* Header — always visible, click to toggle */}
@@ -140,6 +202,11 @@ export function OrdersPage() {
                     <div className="d-flex align-items-center gap-3">
                       <span className="fw-bold text-danger">{formatPrice(parseFloat(o.totalAmount))}</span>
                       <span className={`badge ${statusCfg.badgeClass}`}>{statusCfg.label}</span>
+                      {isPendingBank && (
+                        <span className="badge bg-warning text-dark border border-warning animate-pulse">
+                          <i className="bi bi-clock-history me-1"></i>Chờ quét QR
+                        </span>
+                      )}
                       <i className={`bi bi-chevron-${isExpanded ? "up" : "down"} text-muted`}></i>
                     </div>
                   </div>
@@ -150,7 +217,7 @@ export function OrdersPage() {
                       <div className="row g-4">
                         {/* Payment info */}
                         <div className="col-md-6">
-                          <h6 className="fw-bold mb-3 fs-6 text-uppercase" style={{ fontSize: "12px !important", letterSpacing: "0.05em" }}>
+                          <h6 className="fw-bold mb-3 fs-6 text-uppercase" style={{ fontSize: "12px", letterSpacing: "0.05em" }}>
                             Thông tin thanh toán
                           </h6>
                           <div className="d-flex justify-content-between mb-2 small">
@@ -186,7 +253,7 @@ export function OrdersPage() {
 
                         {/* Shipping address */}
                         <div className="col-md-6">
-                          <h6 className="fw-bold mb-3 fs-6 text-uppercase" style={{ fontSize: "12px !important", letterSpacing: "0.05em" }}>
+                          <h6 className="fw-bold mb-3 fs-6 text-uppercase" style={{ fontSize: "12px", letterSpacing: "0.05em" }}>
                             Địa chỉ giao hàng
                           </h6>
                           <div className="address-card-item">
@@ -201,6 +268,103 @@ export function OrdersPage() {
                             </div>
                           </div>
                         </div>
+
+                        {/* VietQR Payment Panel for PENDING BANK_TRANSFER orders */}
+                        {isPendingBank && (
+                          <div className="col-12">
+                            <div className="vietqr-box bg-light p-3 border rounded">
+                              <div className="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                                <div className="fw-bold text-primary d-flex align-items-center gap-2">
+                                  <i className="bi bi-qr-code-scan fs-5"></i>
+                                  <span>Thông tin chuyển khoản VietQR</span>
+                                </div>
+                                <span className="badge bg-warning text-dark">
+                                  <i className="bi bi-hourglass-split me-1"></i>Đang chờ thanh toán
+                                </span>
+                              </div>
+
+                              <div className="row align-items-center g-3">
+                                <div className="col-md-7">
+                                  <div className="vietqr-info-list">
+                                    <div className="vietqr-info-row d-flex justify-content-between py-1 border-bottom">
+                                      <span className="vietqr-label text-muted small">Ngân hàng</span>
+                                      <span className="vietqr-value fw-semibold small">{BANK_INFO.bankName}</span>
+                                    </div>
+
+                                    <div className="vietqr-info-row d-flex justify-content-between py-1 border-bottom align-items-center">
+                                      <span className="vietqr-label text-muted small">Số tài khoản</span>
+                                      <div className="d-flex align-items-center gap-2">
+                                        <span className="vietqr-value font-monospace fw-bold">{BANK_INFO.accountNo}</span>
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-outline-secondary py-0 px-2 small"
+                                          style={{ fontSize: "11px" }}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleCopy(BANK_INFO.accountNo, "Số tài khoản");
+                                          }}
+                                        >
+                                          <i className="bi bi-copy"></i> Sao chép
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <div className="vietqr-info-row d-flex justify-content-between py-1 border-bottom">
+                                      <span className="vietqr-label text-muted small">Chủ tài khoản</span>
+                                      <span className="vietqr-value text-uppercase fw-semibold small">{BANK_INFO.accountName}</span>
+                                    </div>
+
+                                    <div className="vietqr-info-row d-flex justify-content-between py-1 border-bottom align-items-center">
+                                      <span className="vietqr-label text-muted small">Nội dung CK</span>
+                                      <div className="d-flex align-items-center gap-2">
+                                        <span className="vietqr-value font-monospace fw-bold text-danger">{o.orderNumber}</span>
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-outline-secondary py-0 px-2 small"
+                                          style={{ fontSize: "11px" }}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleCopy(o.orderNumber, "Nội dung chuyển khoản");
+                                          }}
+                                        >
+                                          <i className="bi bi-copy"></i> Sao chép
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <div className="vietqr-info-row d-flex justify-content-between py-1">
+                                      <span className="vietqr-label text-muted small">Số tiền</span>
+                                      <span className="vietqr-value-highlight text-danger fw-bold fs-6">
+                                        {formatPrice(parseFloat(o.totalAmount))}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="alert alert-info d-flex align-items-center gap-2 m-0 p-2 mt-3 small">
+                                    <div className="spinner-border spinner-border-sm text-info flex-shrink-0" role="status"></div>
+                                    <span>
+                                      <strong>Đang tự động kiểm tra giao dịch SePAY...</strong> Hệ thống sẽ tự động xác nhận đơn ngay khi nhận được tiền chuyển khoản.
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="col-md-5 text-center">
+                                  <div className="bg-white p-2 border d-inline-block rounded shadow-sm">
+                                    <img
+                                      src={qrCodeUrl}
+                                      alt={`Mã VietQR đơn hàng ${o.orderNumber}`}
+                                      className="img-fluid"
+                                      style={{ maxWidth: "160px" }}
+                                    />
+                                    <div className="text-muted mt-1" style={{ fontSize: "11px" }}>
+                                      Mã QR tự động điền thông tin
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Order items */}
                         {o.items && o.items.length > 0 && (

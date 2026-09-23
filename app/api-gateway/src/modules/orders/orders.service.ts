@@ -37,49 +37,95 @@ export class OrdersService {
   async handleSepayWebhook(dto: SepayWebhookDto): Promise<{
     success: boolean; message: string
   }> {
-    if (dto.transferType !== 'in') {
-      return {
-        success: true, message: 'Bỏ qua giao dịch tiền ra'
+    try {
+      if (dto.transferType !== 'in') {
+        return {
+          success: true, message: 'Bỏ qua giao dịch tiền ra'
+        };
       }
-    }
-    const orderMatch = dto.content.match(/ORD-\d+-\d+/i);
 
-    if (!orderMatch) {
-      return {
-        success: true, message: 'Không tìm thấy mã đơn hàng trong nội dung giao dịch'
+      let order: Order | null = null;
+
+      // 1. Primary match: ORD followed by 6 digits and 3 digits (e.g. ORD-420312-582 or ORD420312582)
+      const formattedMatch = dto.content.match(/ORD[-_\s]?(\d{6})[-_\s]?(\d{3})/i);
+      if (formattedMatch) {
+        const orderNumber = `ORD-${formattedMatch[1]}-${formattedMatch[2]}`;
+        order = await this.orderRepo.findOne({
+          where: { orderNumber },
+        });
       }
+
+      if (!order) {
+        const ordMatch = dto.content.match(/ORD[-_\s]?\d+[-_\s]?\d+/i);
+        if (ordMatch) {
+          const rawOrd = ordMatch[0].toUpperCase().replace(/\s+/g, '-');
+          order = await this.orderRepo.findOne({
+            where: { orderNumber: rawOrd },
+          });
+        }
+      }
+
+      if (!order) {
+        const pendingOrders = await this.orderRepo.find({
+          where: { paymentStatus: PaymentStatus.PENDING },
+          order: { created_at: 'DESC' },
+        });
+
+        for (const pOrder of pendingOrders) {
+          const totalAmountNum = parseFloat(pOrder.totalAmount);
+          if (Math.abs(totalAmountNum - dto.transferAmount) < 1) {
+            const cleanPhone = (pOrder.shippingPhone || '').replace(/\D/g, '');
+            const phoneWithoutZero = cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone;
+
+            if (
+              (cleanPhone && dto.content.includes(cleanPhone)) ||
+              (phoneWithoutZero && dto.content.includes(phoneWithoutZero)) ||
+              (dto.content.toLowerCase().includes('aurascent') && pendingOrders.length === 1)
+            ) {
+              order = pOrder;
+              console.log(`[Sepay Webhook Fallback] Matched order ${order.orderNumber} via phone (${pOrder.shippingPhone}) & amount (${totalAmountNum})`);
+              break;
+            }
+          }
+        }
+      }
+
+      if (!order) {
+        console.warn(`[Sepay Webhook Warning] Không tìm thấy đơn hàng cho giao dịch content: "${dto.content}", amount: ${dto.transferAmount}`);
+        return {
+          success: true,
+          message: 'Không tìm thấy đơn hàng tương ứng với nội dung giao dịch'
+        };
+      }
+
+      if (order.paymentStatus === PaymentStatus.PAID) {
+        return { success: true, message: `Đơn hàng ${order.orderNumber} đã được thanh toán từ trước.` };
+      }
+
+      const totalAmountNum = parseFloat(order.totalAmount);
+
+      if (dto.transferAmount < totalAmountNum) {
+        throw new BadRequestException(
+          `Số tiền chuyển (${dto.transferAmount}) ít hơn tổng tiền đơn hàng (${totalAmountNum})`,
+        );
+      }
+
+      order.paymentStatus = PaymentStatus.PAID;
+      order.status = OrderStatus.PROCESSING;
+
+      await this.orderRepo.save(order);
+      console.log(`[VietQR Webhook] Đơn hàng ${order.orderNumber} đã tự động đổi trạng thái sang PAID!`);
+      return {
+        success: true,
+        message: `Thanh toán thành công cho đơn hàng ${order.orderNumber}`,
+      };
+    } catch (err: any) {
+      console.error('[Sepay Webhook Handler Error]', err);
+      return {
+        success: false,
+        message: err.message || 'Lỗi hệ thống khi xử lý webhook',
+      };
     }
-
-    const orderNumber = orderMatch[0].toUpperCase();
-    const order = await this.orderRepo.findOne({
-      where: { orderNumber },
-    });
-
-    if (!order)
-      throw new NotFoundException(`Không tìm thấy đơn hàng với mã ${orderNumber}`);
-
-    if (order.paymentStatus === PaymentStatus.PAID) {
-      return { success: true, message: `Đơn hàng ${orderNumber} đã được thanh toán từ trước.` };
-    }
-
-    const totalAmountNum = parseFloat(order.totalAmount);
-
-    if (dto.transferAmount < totalAmountNum) {
-      throw new BadRequestException(
-        `Số tiền chuyển (${dto.transferAmount}) ít hơn tổng tiền đơn hàng (${totalAmountNum})`,
-      );
-    }
-
-    order.paymentStatus = PaymentStatus.PAID;
-    order.status = OrderStatus.PROCESSING;
-
-    await this.orderRepo.save(order);
-    console.log(`[VietQR Webhook] Đơn hàng ${orderNumber} đã tự động đổi trạng thái sang PAID!`);
-    return {
-      success: true,
-      message: `Thanh toán thành công cho đơn hàng ${orderNumber}`,
-    };
-
   }
 
   async createOrder(userId: string, dto: CreateOrderDto): Promise<ResponseCommon<Order>> {

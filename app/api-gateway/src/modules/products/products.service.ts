@@ -20,13 +20,15 @@ import { OutProductListDto } from './dto/out-product-list.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Category } from '../category/entities/category.entity';
-import { async } from 'rxjs';
+import { Inventory } from '../inventory/entities/inventory.entity';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+    @InjectRepository(Inventory)
+    private readonly inventoryRepo: Repository<Inventory>,
     private readonly dataSource: DataSource,
   ) { }
 
@@ -75,13 +77,36 @@ export class ProductsService {
       take: limit,
     });
 
+    const productIds = products.map((p) => p.id);
+    const inventories =
+      productIds.length > 0
+        ? await this.inventoryRepo
+          .createQueryBuilder('inv')
+          .where('inv.productId IN (:...ids)', { ids: productIds })
+          .getMany()
+        : [];
+
+    const inventoryMap = new Map<string, Inventory>();
+    for (const inv of inventories) {
+      inventoryMap.set(inv.productId, inv);
+    }
+
+    const productsWithStock = products.map((p) => {
+      const inv = inventoryMap.get(p.id);
+      const availableStock =
+        inv != null
+          ? Math.max(0, inv.quantityOnHand - inv.quantityReserved)
+          : -1; // -1 = chưa có inventory record
+      return { ...p, availableStock };
+    });
+
     return ResponseCommon.ok(
-      { data: products, total, page, limit },
+      { data: productsWithStock, total, page, limit },
       'GET_LIST_PRODUCT_SUCCESS',
     );
   }
 
-  async findOne(id: string): Promise<ResponseCommon<Product>> {
+  async findOne(id: string): Promise<ResponseCommon<any>> {
     const product = await this.productRepo.findOne({
       where: { id, status: ProductStatus.ACTIVE },
       relations: { category: true, images: true },
@@ -92,7 +117,15 @@ export class ProductsService {
       throw new NotFoundException('PRODUCT_NOT_FOUND');
     }
 
-    return ResponseCommon.ok(product, 'GET_PRODUCT_SUCCESS');
+    const inv = await this.inventoryRepo.findOne({
+      where: { productId: id },
+    });
+    const availableStock =
+      inv != null
+        ? Math.max(0, inv.quantityOnHand - inv.quantityReserved)
+        : -1;
+
+    return ResponseCommon.ok({ ...product, availableStock }, 'GET_PRODUCT_SUCCESS');
   }
 
   async findOneAdmin(id: string): Promise<ResponseCommon<Product>> {
@@ -139,8 +172,31 @@ export class ProductsService {
       withDeleted: true,
     });
 
+    const productIds = products.map((p) => p.id);
+    const inventories =
+      productIds.length > 0
+        ? await this.inventoryRepo
+          .createQueryBuilder('inv')
+          .where('inv.productId IN (:...ids)', { ids: productIds })
+          .getMany()
+        : [];
+
+    const inventoryMap = new Map<string, Inventory>();
+    for (const inv of inventories) {
+      inventoryMap.set(inv.productId, inv);
+    }
+
+    const productsWithStock = products.map((p) => {
+      const inv = inventoryMap.get(p.id);
+      const availableStock =
+        inv != null
+          ? Math.max(0, inv.quantityOnHand - inv.quantityReserved)
+          : -1;
+      return { ...p, availableStock };
+    });
+
     return ResponseCommon.ok(
-      { data: products, total, page, limit },
+      { data: productsWithStock, total, page, limit },
       'GET_LIST_PRODUCT_SUCCESS',
     );
   }

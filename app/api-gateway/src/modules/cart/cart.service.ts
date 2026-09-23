@@ -37,7 +37,7 @@ export class CartService {
   constructor(
     private readonly redisService: RedisService,
     private readonly productsService: ProductsService,
-  ) {}
+  ) { }
 
   private getCartKey(userId?: string, sessionId?: string): string {
     if (userId) return `cart:user:${userId}`;
@@ -79,7 +79,7 @@ export class CartService {
         totalPrice += lineTotal;
         totalItems += item.quantity;
 
-        const img = p.images?.find((i) => i.isPrimary) ?? p.images?.[0];
+        const img = p.images?.find((i: any) => i.isPrimary) ?? p.images?.[0];
 
         populatedItems.push({
           productId: item.productId,

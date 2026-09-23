@@ -76,6 +76,7 @@ export function ProductPage() {
 
   const percent = discountPercent(product);
   const images = product.images || [];
+  const isOutOfStock = typeof product.availableStock === 'number' && product.availableStock === 0;
 
   return (
     <div className="product-detail-page pb-5">
@@ -193,10 +194,25 @@ export function ProductPage() {
               )}
             </div>
 
+            {isOutOfStock ? (
+              <div className="mb-3">
+                <p className="text-muted small mt-1 mb-0" style={{ fontSize: '12px' }}>
+                  Sản phẩm hiện tại đang tạm hết hàng. Vui lòng quay lại sau.
+                </p>
+              </div>
+            ) : (
+              typeof product.availableStock === 'number' && product.availableStock > 0 && (
+                <p className="text-success small mb-3" style={{ fontSize: '12px' }}>
+                  ✓ Còn hàng ({product.availableStock} sản phẩm)
+                </p>
+              )
+            )}
+
             <div className="d-flex align-items-center gap-2 mb-3">
               <div className="input-group" style={{ width: "120px" }}>
                 <button
                   type="button"
+                  disabled={isOutOfStock}
                   className="btn btn-outline-secondary border-0 bg-light fw-bold btn-sm"
                   onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                 >
@@ -211,6 +227,7 @@ export function ProductPage() {
                 />
                 <button
                   type="button"
+                  disabled={isOutOfStock}
                   className="btn btn-outline-secondary border-0 bg-light fw-bold btn-sm"
                   onClick={() => setQuantity((prev) => prev + 1)}
                 >
@@ -219,19 +236,37 @@ export function ProductPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="btn catalog-see-more w-50 py-2.5 mb-4 fw-bold text-uppercase"
-              style={{
-                background: "#a8383a",
-                borderRadius: "0px",
-                letterSpacing: "0.05em",
-                fontSize: "0.85rem",
-              }}
-              onClick={handleAddToCart}
-            >
-              THÊM VÀO GIỎ
-            </button>
+            {isOutOfStock ? (
+              <button
+                type="button"
+                disabled
+                className="btn w-50 py-2 mb-4 fw-bold text-uppercase"
+                style={{
+                  background: '#adb5bd',
+                  borderRadius: '0px',
+                  letterSpacing: '0.05em',
+                  fontSize: '0.85rem',
+                  color: '#fff',
+                  cursor: 'not-allowed',
+                }}
+              >
+                HẾT HÀNG
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn catalog-see-more w-50 py-2.5 mb-4 fw-bold text-uppercase"
+                style={{
+                  background: "#a8383a",
+                  borderRadius: "0px",
+                  letterSpacing: "0.05em",
+                  fontSize: "0.85rem",
+                }}
+                onClick={handleAddToCart}
+              >
+                THÊM VÀO GIỎ
+              </button>
+            )}
 
             <div className="product-description-section mt-3">
               {product.shortDescription && (

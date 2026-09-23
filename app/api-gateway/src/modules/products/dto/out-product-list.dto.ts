@@ -62,6 +62,9 @@ export class ProductItemDto {
   @ApiProperty()
   isFeatured: boolean;
 
+  @ApiProperty({ description: 'Số lượng khả dụng = quantityOnHand - quantityReserved. -1 nghĩa là chưa có inventory record.', example: 10 })
+  availableStock: number;
+
   @ApiPropertyOptional({ type: ProductCategoryItemDto })
   category?: ProductCategoryItemDto;
 

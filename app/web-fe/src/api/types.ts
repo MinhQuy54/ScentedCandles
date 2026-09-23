@@ -32,6 +32,7 @@ export interface Product {
   compareAtPrice?: string;
   status: string;
   isFeatured: boolean;
+  availableStock?: number;
   deleted_at?: string | null;
   category?: ProductCategory;
   images?: ProductImage[];
@@ -140,6 +141,15 @@ export interface OrderItem {
   };
 }
 
+export interface PaymentInfo {
+  bankId: string;
+  accountNo: string;
+  accountName: string;
+  transferContent: string;
+  amount: number;
+  qrCodeUrl: string;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -157,6 +167,7 @@ export interface Order {
   shippingFee: string;
   totalAmount: string;
   items?: OrderItem[];
+  paymentInfo?: PaymentInfo;
   created_at: string;
 }
 

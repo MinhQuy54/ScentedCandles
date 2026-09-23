@@ -7,26 +7,9 @@ import { formatPrice } from "../lib/products";
 import { notification } from "antd";
 import { createAddress, getAddress } from "../api/addresses";
 
-const BANK_INFO = {
-  bankId: "MB",
-  bankName: "MBBank (Ngân hàng Quân Đội)",
-  accountNo: "0325367066",
-  accountName: "NGO MINH QUY",
-};
-
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { items, totalPrice, clearCart } = useCart();
-
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    notification.success({
-      message: "Đã sao chép",
-      description: `Đã sao chép ${label}: ${text}`,
-      placement: "topRight",
-      duration: 2,
-    });
-  };
 
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -287,62 +270,20 @@ export function CheckoutPage() {
               </label>
 
               {paymentMethod === "BANK_TRANSFER" && (
-                <div className="vietqr-box">
-                  <div className="vietqr-header">
-                    <i className="bi bi-qr-code-scan"></i>
-                    <span>Thông tin chuyển khoản VietQR</span>
-                  </div>
-
-                  <div className="row align-items-center g-3">
-                    <div className="col-md-7">
-                      <div className="vietqr-info-list">
-                        <div className="vietqr-info-row">
-                          <span className="vietqr-label">Ngân hàng</span>
-                          <span className="vietqr-value">{BANK_INFO.bankName}</span>
-                        </div>
-
-                        <div className="vietqr-info-row">
-                          <span className="vietqr-label">Số tài khoản</span>
-                          <div className="d-flex align-items-center">
-                            <span className="vietqr-value font-monospace fs-6">{BANK_INFO.accountNo}</span>
-                            <button
-                              type="button"
-                              className="vietqr-copy-btn"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleCopy(BANK_INFO.accountNo, "Số tài khoản");
-                              }}
-                            >
-                              <i className="bi bi-copy"></i> Sao chép
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="vietqr-info-row">
-                          <span className="vietqr-label">Chủ tài khoản</span>
-                          <span className="vietqr-value text-uppercase">{BANK_INFO.accountName}</span>
-                        </div>
-
-                        <div className="vietqr-info-row">
-                          <span className="vietqr-label">Số tiền cần trả</span>
-                          <span className="vietqr-value-highlight">{formatPrice(finalTotal)}</span>
-                        </div>
-                      </div>
-
-                      <div className="small text-muted mt-3 pt-2 border-top">
-                        <i className="bi bi-info-circle me-1 text-primary"></i> Quét mã QR bằng App ngân hàng bất kỳ để tự động điền số tiền & thông tin.
-                      </div>
+                <div className="vietqr-box bg-light p-3 border rounded mt-3">
+                  <div className="d-flex align-items-center gap-3">
+                    <div className="bg-white p-3 border rounded text-center shadow-sm flex-shrink-0" style={{ width: 110 }}>
+                      <i className="bi bi-qr-code-scan fs-1 text-danger"></i>
+                      <div className="fw-bold text-dark mt-1" style={{ fontSize: "11px" }}>VietQR SePAY</div>
                     </div>
-
-                    <div className="col-md-5 text-center">
-                      <div className="vietqr-card">
-                        <img
-                          src={`https://img.vietqr.io/image/${BANK_INFO.bankId}-${BANK_INFO.accountNo}-compact2.png?amount=${finalTotal}&addInfo=${encodeURIComponent(`${phone || 'AuraScent'} - Thanh toan AuraScent`)}&accountName=${encodeURIComponent(BANK_INFO.accountName)}`}
-                          alt="Mã QR Chuyển khoản VietQR"
-                          className="img-fluid"
-                          style={{ maxWidth: "170px" }}
-                        />
-                      </div>
+                    <div className="flex-grow-1">
+                      <h6 className="fw-bold text-danger mb-1 fs-6">Thanh toán chuyển khoản tự động</h6>
+                      <p className="small text-muted mb-2">
+                        Quý khách vui lòng nhấn <strong>ĐẶT HÀNG NGAY</strong> bên dưới để tạo đơn hàng. Mã QR chính thức kèm <strong>Mã đơn hàng (ORD-XXXXXX-XXX)</strong> sẽ hiển thị ngay lập tức để quét thanh toán.
+                      </p>
+                      <span className="badge bg-success text-white">
+                        <i className="bi bi-shield-check me-1"></i>Hệ thống tự động xác nhận qua SePAY trong 3s
+                      </span>
                     </div>
                   </div>
                 </div>
