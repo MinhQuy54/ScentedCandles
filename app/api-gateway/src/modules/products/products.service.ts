@@ -21,6 +21,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Category } from '../category/entities/category.entity';
 import { Inventory } from '../inventory/entities/inventory.entity';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class ProductsService {
@@ -30,6 +31,7 @@ export class ProductsService {
     @InjectRepository(Inventory)
     private readonly inventoryRepo: Repository<Inventory>,
     private readonly dataSource: DataSource,
+    private readonly redisService: RedisService
   ) { }
 
   private async triggerAiSync(productId: string, action: 'UPSERT' | 'DELETE' = 'UPSERT') {
@@ -52,6 +54,20 @@ export class ProductsService {
   ): Promise<ResponseCommon<OutProductListDto>> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+
+    const cacheKey = `products:list:page=${page}:limit=${limit}:cat=${query.categoryId || 'all'}:name=${query.name || 'all'}:catName=${query.categoryName || 'all'}`;
+
+    try {
+      const cacheData = await this.redisService.get(cacheKey);
+      if (cacheData) {
+        console.log(`[Redis Cache HIT] ${cacheKey}`);
+        return ResponseCommon.ok(JSON.parse(cacheData), 'GET_LIST_PRODUCT_SUCCESS');
+      }
+    } catch (err) {
+      console.warn(`[Redis Cache Error] ${cacheKey}`, err);
+    }
+
+    console.log(`[Redis Cache MISS] ${cacheKey}`);
 
     const where: FindOptionsWhere<Product> = {
       status: ProductStatus.ACTIVE,
@@ -100,11 +116,31 @@ export class ProductsService {
       return { ...p, availableStock };
     });
 
-    return ResponseCommon.ok(
-      { data: productsWithStock, total, page, limit },
-      'GET_LIST_PRODUCT_SUCCESS',
-    );
+    const resultData = { data: productsWithStock, total, page, limit };
+
+    try {
+      await this.redisService.set(cacheKey, JSON.stringify(resultData), 300);
+    } catch (err) {
+      console.warn('[Redis Cache Set Error]:', err);
+    }
+
+    return ResponseCommon.ok(resultData, 'GET_LIST_PRODUCT_SUCCESS');
   }
+
+  // Thêm helper xóa toàn bộ cache sản phẩm
+  private async clearProductsCache() {
+    try {
+      const redisClient = this.redisService.getClient();
+      const keys = await redisClient.keys('products:list:*');
+      if (keys.length > 0) {
+        await redisClient.del(...keys);
+        console.log(`[Redis Cache] Đã dọn dẹp ${keys.length} cache sản phẩm.`);
+      }
+    } catch (err) {
+      console.warn('[Redis Cache Clear Error]:', err);
+    }
+  }
+
 
   async findOne(id: string): Promise<ResponseCommon<any>> {
     const product = await this.productRepo.findOne({
@@ -236,6 +272,7 @@ export class ProductsService {
       }
 
       await queryRunner.commitTransaction();
+      await this.clearProductsCache();
       this.triggerAiSync(product.id, 'UPSERT');
       return ResponseCommon.created(product, 'CREATE_PRODUCT_SUCCESS');
     } catch (error) {
@@ -287,6 +324,7 @@ export class ProductsService {
     }
 
     const saved = await this.productRepo.save(product);
+    await this.clearProductsCache();
     this.triggerAiSync(id, 'UPSERT');
     return ResponseCommon.ok(saved, 'UPDATE_PRODUCT_SUCCESS');
   }
@@ -313,6 +351,7 @@ export class ProductsService {
       await queryRunner.manager.softDelete(Product, id);
 
       await queryRunner.commitTransaction();
+      await this.clearProductsCache();
       this.triggerAiSync(id, 'DELETE');
       return ResponseCommon.ok(
         { id, deleted_at: now },
