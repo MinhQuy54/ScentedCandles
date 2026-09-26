@@ -41,48 +41,6 @@ export function CheckoutPage() {
       .catch(() => setShowNewAddressForm(true));
   }, []);
 
-  const handleAddNewAddress = async () => {
-    if (!recipientName || !phone || !streetAddress || !ward || !district || !city) {
-      const msg = "Vui lòng nhập đầy đủ thông tin địa chỉ mới.";
-      setError(msg);
-      notification.error({
-        message: "Thiếu thông tin địa chỉ",
-        description: msg,
-        placement: "topRight",
-      });
-      return null;
-    }
-    try {
-      const newAddr = await createAddress({
-        recipientName,
-        phone,
-        streetAddress,
-        ward,
-        district,
-        city,
-        isDefault: addresses.length === 0,
-      });
-      setAddresses([newAddr, ...addresses]);
-      setSelectedAddressId(newAddr.id);
-      setShowNewAddressForm(false);
-      notification.success({
-        message: "Thêm địa chỉ thành công",
-        description: "Địa chỉ giao hàng mới đã được ghi nhận.",
-        placement: "topRight",
-      });
-      return newAddr.id;
-    } catch {
-      const msg = "Không thể lưu địa chỉ mới.";
-      setError(msg);
-      notification.error({
-        message: "Lỗi lưu địa chỉ",
-        description: msg,
-        placement: "topRight",
-      });
-      return null;
-    }
-  };
-
   const handlePlaceOrder = async () => {
     if (items.length === 0) {
       const msg = "Giỏ hàng của bạn đang trống.";
@@ -95,29 +53,51 @@ export function CheckoutPage() {
       return;
     }
 
-    let addressIdToUse = selectedAddressId;
-
-    if (showNewAddressForm || !addressIdToUse) {
-      const createdId = await handleAddNewAddress();
-      if (!createdId) return;
-      addressIdToUse = createdId;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
       const payload: any = {
-        addressId: addressIdToUse,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         paymentMethod,
         note,
       };
 
+      if (!showNewAddressForm && selectedAddressId) {
+        payload.addressId = selectedAddressId;
+      } else {
+        if (!recipientName || !phone || !streetAddress || !ward || !district || !city) {
+          const msg = "Vui lòng nhập đầy đủ thông tin người nhận và địa chỉ giao hàng.";
+          setError(msg);
+          notification.error({
+            message: "Thiếu thông tin địa chỉ",
+            description: msg,
+            placement: "topRight",
+          });
+          setLoading(false);
+          return;
+        }
+        payload.recipientName = recipientName;
+        payload.phone = phone;
+        payload.streetAddress = streetAddress;
+        payload.ward = ward;
+        payload.district = district;
+        payload.city = city;
+
+        // Save address in background if user is logged in
+        createAddress({
+          recipientName,
+          phone,
+          streetAddress,
+          ward,
+          district,
+          city,
+          isDefault: addresses.length === 0,
+        }).catch(() => null);
+      }
+
       const order = await createOrder(payload);
       await clearCart();
-
-
 
       navigate(`/orders?success=true&orderNumber=${order.orderNumber}`);
     } catch (err: any) {

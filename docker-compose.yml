@@ -34,37 +34,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
-    container_name: scented-candles-elasticsearch
-    restart: always
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - '${ELASTICSEARCH_PORT}:9200'
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-
   # --- APPLICATION SERVICES ---
-  ai-engine:
-    build:
-      context: ./app/ai-engine
-      dockerfile: Dockerfile
-    container_name: scented-candles-ai-engine
-    restart: always
-    ports:
-      - "50051:50051"
-    environment:
-      - QDRANT_HOST=qdrant
-      - ELASTICSEARCH_HOST=http://elasticsearch:9200
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-      - qdrant
-      - elasticsearch
-
   ai-chatbot:
     build:
       context: ./app/ai-engine
@@ -90,12 +60,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       - REDIS_HOST=redis
-      - AI_SERVICE_GRPC_URL=ai-engine:50051
       - AI_CHATBOT_URL=http://ai-chatbot:8000
     depends_on:
       - postgres
       - redis
-      - ai-engine
       - ai-chatbot
 
   web-fe:
@@ -113,4 +81,3 @@ volumes:
   postgres_data:
   redis_data:
   qdrant_data:
-  es_data:

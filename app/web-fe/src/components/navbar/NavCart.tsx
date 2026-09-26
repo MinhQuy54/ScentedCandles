@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Modal } from 'antd'
 import { useClickOutsideClose } from './useClickOutsideClose'
 import { useCart } from '../../context/CartContext'
 import { formatPrice, getImageUrl } from '../../lib/products'
@@ -14,6 +15,20 @@ export function NavCart({ open, onToggle, onClose, count = 0 }: NavCartProps) {
   const rootRef = useClickOutsideClose(open, onClose)
   const { items, totalPrice, removeFromCart } = useCart()
   const displayCount = count > 99 ? '99+' : String(count)
+
+  const handleRemove = (productId: string, productName: string) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa',
+      content: `Bạn có chắc chắn muốn xóa "${productName}" khỏi giỏ hàng?`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      centered: true,
+      onOk: () => {
+        removeFromCart(productId)
+      },
+    })
+  }
 
   return (
     <div className="nav-popover-wrap" ref={rootRef}>
@@ -57,7 +72,7 @@ export function NavCart({ open, onToggle, onClose, count = 0 }: NavCartProps) {
                 <button
                   type="button"
                   className="btn btn-sm btn-link text-muted p-0 text-decoration-none fs-5"
-                  onClick={() => removeFromCart(item.productId)}
+                  onClick={() => handleRemove(item.productId, item.product.name)}
                 >
                   &times;
                 </button>

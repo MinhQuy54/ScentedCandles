@@ -137,10 +137,10 @@ cd AuraScent
 cp .env.example .env   # Cấu hình DATABASE_URL, REDIS_URL, OPENAI_API_KEY, v.v.
 ```
 
-### 2. Khởi động hạ tầng (Postgres, Redis, Qdrant, Elasticsearch)
+### 2. Khởi động hạ tầng (Postgres, Redis, Qdrant)
 
 ```bash
-docker compose up -d postgres redis qdrant elasticsearch
+docker compose up -d postgres redis qdrant
 ```
 
 ### 3. Build & chạy các service chính

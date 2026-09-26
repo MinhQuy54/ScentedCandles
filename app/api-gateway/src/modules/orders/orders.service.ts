@@ -200,7 +200,7 @@ export class OrdersService {
             item.productId,
             item.quantity,
             orderNumber,
-            userId,
+            userId ?? undefined,
           );
 
           const lineTotal = Number(product.price) * item.quantity;
@@ -221,7 +221,7 @@ export class OrdersService {
 
         const newOrder = queryRunner.manager.create(Order, {
           orderNumber,
-          userId,
+          userId: userId || undefined,
           status: OrderStatus.PENDING,
           paymentStatus: PaymentStatus.PENDING,
           paymentMethod: dto.paymentMethod,
@@ -251,7 +251,9 @@ export class OrdersService {
         await queryRunner.commitTransaction();
 
         // Clear Redis cart for logged-in user
-        await this.cartService.clearCart(userId).catch(() => null);
+        if (userId) {
+          await this.cartService.clearCart(userId).catch(() => null);
+        }
 
         const paymentInfo = this.getVietQrPaymentInfo(savedOrder.orderNumber, totalAmountNum);
         return ResponseCommon.created({ ...savedOrder, paymentInfo }, 'CREATE_ORDER_SUCCESS');
@@ -308,9 +310,14 @@ export class OrdersService {
     return ResponseCommon.ok({ ...order, paymentInfo }, 'OK');
   }
 
-  async cancelOrder(userId: string, orderId: string): Promise<ResponseCommon<Order>> {
+  async cancelOrder(userId: string | null | undefined, orderId: string): Promise<ResponseCommon<Order>> {
+    const whereCondition: any = { id: orderId };
+    if (userId) {
+      whereCondition.userId = userId;
+    }
+
     const order = await this.orderRepo.findOne({
-      where: { id: orderId, userId },
+      where: whereCondition,
       relations: { items: { product: true } },
     });
 
@@ -342,7 +349,7 @@ export class OrdersService {
           item.quantity,
           order.orderNumber,
           isAlreadyCommitted,
-          userId,
+          userId ?? undefined,
         );
       }
 

@@ -1,9 +1,24 @@
 import { Link } from "react-router-dom";
+import { Modal } from "antd";
 import { useCart } from "../context/CartContext";
 import { formatPrice, getImageUrl } from "../lib/products";
 
 export function CartPage() {
   const { items, totalItems, totalPrice, updateQuantity, removeFromCart } = useCart();
+
+  const handleRemove = (productId: string, productName: string) => {
+    Modal.confirm({
+      title: "Xác nhận xóa",
+      content: `Bạn có chắc chắn muốn xóa "${productName}" khỏi giỏ hàng?`,
+      okText: "Xóa",
+      okType: "danger",
+      cancelText: "Hủy",
+      centered: true,
+      onOk: () => {
+        removeFromCart(productId);
+      },
+    });
+  };
 
   if (items.length === 0) {
     return (
@@ -108,7 +123,7 @@ export function CartPage() {
                         type="button"
                         className="btn btn-link text-danger p-0 border-0"
                         style={{ fontSize: "14px" }}
-                        onClick={() => removeFromCart(item.productId)}
+                        onClick={() => handleRemove(item.productId, item.product.name)}
                       >
                         <i className="bi bi-trash"></i>
                       </button>

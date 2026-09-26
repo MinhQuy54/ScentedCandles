@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { notification } from "antd";
+import { Modal, notification } from "antd";
 import { cancelOrder, getOrders } from "../api/orders";
 import type { Order } from "../api/types";
 import { formatPrice } from "../lib/products";
@@ -110,24 +110,32 @@ export function OrdersPage() {
     return () => clearInterval(interval);
   }, [orders]);
 
-  const handleCancel = async (id: string) => {
-    if (confirm("Bạn muốn hủy đơn hàng này?")) {
-      try {
-        const updated = await cancelOrder(id);
-        setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
-        notification.success({
-          message: "Hủy đơn thành công",
-          description: `Đơn hàng #${updated.orderNumber} đã được hủy.`,
-          placement: "topRight",
-        });
-      } catch (err: any) {
-        notification.error({
-          message: "Không thể hủy đơn",
-          description: err.message || "Đã có lỗi xảy ra.",
-          placement: "topRight",
-        });
-      }
-    }
+  const handleCancel = (id: string) => {
+    Modal.confirm({
+      title: "Xác nhận hủy đơn hàng",
+      content: "Bạn có chắc chắn muốn hủy đơn hàng này không?",
+      okText: "Hủy đơn",
+      okType: "danger",
+      cancelText: "Quay lại",
+      centered: true,
+      onOk: async () => {
+        try {
+          const updated = await cancelOrder(id);
+          setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+          notification.success({
+            message: "Hủy đơn thành công",
+            description: `Đơn hàng #${updated.orderNumber} đã được hủy.`,
+            placement: "topRight",
+          });
+        } catch (err: any) {
+          notification.error({
+            message: "Không thể hủy đơn",
+            description: err.message || "Đã có lỗi xảy ra.",
+            placement: "topRight",
+          });
+        }
+      },
+    });
   };
 
   return (

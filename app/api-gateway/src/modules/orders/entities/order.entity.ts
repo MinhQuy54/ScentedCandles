@@ -19,8 +19,8 @@ export class Order extends BaseEntity {
   @Column({ name: 'order_number', unique: true, length: 50 })
   orderNumber: string;
 
-  @Column({ name: 'user_id' })
-  userId: string;
+  @Column({ name: 'user_id', nullable: true })
+  userId?: string | null;
 
   @ManyToOne(() => User, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

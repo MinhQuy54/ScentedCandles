@@ -1,11 +1,5 @@
-# gRPC & Protobuf
-grpcio>=1.62.0
-grpcio-tools>=1.62.0
-protobuf>=4.25.3
-
 # Vector DB & Search Engine
 qdrant-client==1.17.1
-elasticsearch>=8.12.0
 
 # Async Worker & Cache
 celery>=5.3.6

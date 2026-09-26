@@ -26,6 +26,7 @@ import { AdminUsersPage } from "./page/admin/AdminUserPage";
 import { ReturnPolicyPage } from "./page/ReturnPolicyPage";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { ContactPage } from "./page/ContactPage";
+
 export default function App() {
   return (
     <AuthProvider>

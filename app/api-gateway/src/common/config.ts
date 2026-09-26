@@ -32,10 +32,6 @@ export const dbConfig = {
     database: process.env.DB_DATABASE ?? 'postgres',
 }
 
-export const orchestratorConfig = {
-    grpcUrl: process.env.ORCHESTRATOR_URL ?? 'localhost:50054',
-}
-
 export const minioConfig = {
     endPoint: process.env.MINIO_ENDPOINT ?? '127.0.0.1',
     port: parseInt(process.env.MINIO_PORT ?? '9000', 10),
