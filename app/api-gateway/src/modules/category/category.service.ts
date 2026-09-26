@@ -10,6 +10,7 @@ import { Product } from '../products/entities/product.entity';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class CategoryService {
@@ -18,15 +19,44 @@ export class CategoryService {
     private readonly categoryRepo: Repository<Category>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+    private readonly redisService: RedisService
   ) { }
-  findAll() {
-    return this.categoryRepo
-      .find({
-        where: { isActive: true, deleted_at: IsNull() },
-        order: { sortOrder: 'ASC', name: 'ASC' },
-      })
-      .then((data) => ResponseCommon.ok(data, 'GET_LIST_CATEGORY_SUCCESS'));
+  private async clearCategoriesCache() {
+    try {
+      await this.redisService.del('categories:list');
+      console.log('[Redis Cache] Đã dọn dẹp cache danh mục sản phẩm.');
+    } catch (err) {
+      console.warn('[Redis Cache Clear Error]:', err);
+    }
   }
+
+  async findAll() {
+    const cacheKey = 'categories:list';
+
+    try {
+      const cached = await this.redisService.get(cacheKey);
+      if (cached) {
+        console.log(`[Redis Cache HIT] ${cacheKey}`);
+        return ResponseCommon.ok(JSON.parse(cached), 'GET_LIST_CATEGORY_SUCCESS');
+      }
+    } catch (err) {
+      console.warn('[Redis Cache Get Error]:', err);
+    }
+    console.log(`[Redis Cache MISS] ${cacheKey}`);
+    const data = await this.categoryRepo.find({
+      where: { isActive: true, deleted_at: IsNull() },
+      order: { sortOrder: 'ASC', name: 'ASC' },
+    });
+
+    try {
+      await this.redisService.set(cacheKey, JSON.stringify(data), 600);
+    } catch (err) {
+      console.warn('[Redis Cache Set Error]:', err);
+    }
+
+    return ResponseCommon.ok(data, 'GET_LIST_CATEGORY_SUCCESS');
+  }
+
 
   findAllAdmin() {
     return this.categoryRepo
@@ -64,6 +94,7 @@ export class CategoryService {
     });
 
     const saved = await this.categoryRepo.save(category);
+    await this.clearCategoriesCache()
     return ResponseCommon.created(saved, 'CREATE_CATEGORY_SUCCESS');
   }
 
@@ -109,6 +140,7 @@ export class CategoryService {
     }
 
     const saved = await this.categoryRepo.save(category);
+    await this.clearCategoriesCache()
     return ResponseCommon.ok(saved, 'UPDATE_CATEGORY_SUCCESS');
   }
 
@@ -132,6 +164,7 @@ export class CategoryService {
       throw new NotFoundException('CATEGORY_NOT_FOUND');
     }
 
+    await this.clearCategoriesCache()
     return ResponseCommon.ok(
       { id, deleted_at: new Date() },
       'DELETE_CATEGORY_SUCCESS',

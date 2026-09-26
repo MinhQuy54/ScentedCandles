@@ -2,6 +2,7 @@ import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { Public } from '../core/auth/decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 import { AiService } from './ai.service';
 import { ChatRequestDto } from './dto/chat.dto';
 
@@ -11,6 +12,7 @@ import { ChatRequestDto } from './dto/chat.dto';
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('chat')
   @ApiOperation({ summary: 'Stream chatbot reply (plain text chunks)' })
   @ApiOkResponse({ description: 'Streaming text response' })

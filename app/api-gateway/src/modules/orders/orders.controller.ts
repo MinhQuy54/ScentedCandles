@@ -19,6 +19,7 @@ import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { OrdersService } from './orders.service';
 import { SepayWebhookDto } from './dto/sepay-webhook.dto';
 import { Public } from '../core/auth/decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -26,6 +27,7 @@ import { Public } from '../core/auth/decorators/public.decorator';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   @ApiOperation({ summary: 'Create new order (Checkout)' })
   createOrder(@Body() dto: CreateOrderDto, @Req() req: any) {

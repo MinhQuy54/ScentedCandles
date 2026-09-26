@@ -26,6 +26,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { AddressModule } from './modules/addresses/address.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AiModule } from './modules/ai/ai.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -85,6 +86,12 @@ import { AiModule } from './modules/ai/ai.module';
         fallthrough: false,
       },
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      }
+    ]),
     CartModule,
   ],
   controllers: [AppController],
@@ -97,6 +104,10 @@ import { AiModule } from './modules/ai/ai.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule { }

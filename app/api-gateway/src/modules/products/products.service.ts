@@ -127,11 +127,14 @@ export class ProductsService {
     return ResponseCommon.ok(resultData, 'GET_LIST_PRODUCT_SUCCESS');
   }
 
-  // Thêm helper xóa toàn bộ cache sản phẩm
-  private async clearProductsCache() {
+  private async clearProductsCache(productId?: string) {
     try {
       const redisClient = this.redisService.getClient();
       const keys = await redisClient.keys('products:list:*');
+
+      if (productId) {
+        keys.push(`products:detail:${productId}`);
+      }
       if (keys.length > 0) {
         await redisClient.del(...keys);
         console.log(`[Redis Cache] Đã dọn dẹp ${keys.length} cache sản phẩm.`);
@@ -143,6 +146,21 @@ export class ProductsService {
 
 
   async findOne(id: string): Promise<ResponseCommon<any>> {
+
+    const cacheKey = `products:detail:${id}`;
+
+    try {
+      const cached = await this.redisService.get(cacheKey);
+
+      if (cached) {
+        console.log(`[Redis Cache HIT] ${cacheKey}`);
+        return ResponseCommon.ok(JSON.parse(cached), 'GET_PRODUCT_SUCCESS');
+      }
+    } catch (err) {
+      console.warn(`[Redis Cache Error] ${cacheKey}`, err);
+    }
+    console.log(`[Redis Cache MISS] ${cacheKey}`);
+
     const product = await this.productRepo.findOne({
       where: { id, status: ProductStatus.ACTIVE },
       relations: { category: true, images: true },
@@ -160,6 +178,12 @@ export class ProductsService {
       inv != null
         ? Math.max(0, inv.quantityOnHand - inv.quantityReserved)
         : -1;
+
+    try {
+      await this.redisService.set(cacheKey, JSON.stringify({ ...product, availableStock }), 300);
+    } catch (err) {
+      console.warn(`[Redis Cache Set Error] ${cacheKey}`, err);
+    }
 
     return ResponseCommon.ok({ ...product, availableStock }, 'GET_PRODUCT_SUCCESS');
   }
@@ -272,7 +296,7 @@ export class ProductsService {
       }
 
       await queryRunner.commitTransaction();
-      await this.clearProductsCache();
+      await this.clearProductsCache(product.id);
       this.triggerAiSync(product.id, 'UPSERT');
       return ResponseCommon.created(product, 'CREATE_PRODUCT_SUCCESS');
     } catch (error) {
@@ -324,7 +348,7 @@ export class ProductsService {
     }
 
     const saved = await this.productRepo.save(product);
-    await this.clearProductsCache();
+    await this.clearProductsCache(id);
     this.triggerAiSync(id, 'UPSERT');
     return ResponseCommon.ok(saved, 'UPDATE_PRODUCT_SUCCESS');
   }
@@ -351,7 +375,7 @@ export class ProductsService {
       await queryRunner.manager.softDelete(Product, id);
 
       await queryRunner.commitTransaction();
-      await this.clearProductsCache();
+      await this.clearProductsCache(id);
       this.triggerAiSync(id, 'DELETE');
       return ResponseCommon.ok(
         { id, deleted_at: now },
