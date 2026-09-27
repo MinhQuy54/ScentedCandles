@@ -1,4 +1,4 @@
-# AuraScent 🕯️✨
+# AuraScent
 
 **Nền tảng E-Commerce Nến Thơm Tích Hợp AI Tư Vấn Mùi Hương Real-time & Vector Semantic Search**
 
@@ -11,13 +11,13 @@
 
 ---
 
-## 📌 Tổng quan dự án
+## Tổng quan dự án
 
 **AuraScent** giải quyết rào cản chọn lựa mùi hương khi mua nến thơm trực tuyến. Hệ thống kết hợp AI Chatbot tư vấn cảm xúc theo ngữ cảnh real-time, Vector Semantic Search (Qdrant DB + Gemini Embeddings), cơ chế chống over-selling khi flash sale, và tích hợp thanh toán tự động qua VietQR / Sepay.
 
 ---
 
-## 🚀 Tính năng thực tế triển khai
+## Tính năng thực tế triển khai
 
 | Nhóm tính năng | Chi tiết kỹ thuật thực tế |
 |---|---|
@@ -32,7 +32,7 @@
 
 ---
 
-## 📐 Kiến trúc hệ thống
+## Kiến trúc hệ thống
 
 ```text
                ┌───────────────────────────────────────────┐
@@ -59,7 +59,7 @@
 
 ---
 
-## 🛠️ Tech Stack Thực Tế
+## Tech Stack Thực Tế
 
 - **Frontend**: React 19, TypeScript, Vite, Ant Design, TailwindCSS.
 - **Backend API Gateway**: NestJS, TypeORM, PostgreSQL 16, Redis 7 (ioredis, Redlock), Passport JWT, Throttler Rate Limiting.
@@ -69,7 +69,7 @@
 
 ---
 
-## 📂 Cấu trúc thư mục
+## Cấu trúc thư mục
 
 ```text
 ScentedCandles/
@@ -85,7 +85,7 @@ ScentedCandles/
 
 ---
 
-## ⚡ Cài đặt & Chạy ứng dụng
+## Cài đặt & Chạy ứng dụng
 
 ### 1. Khởi chạy hạ tầng qua Docker Compose
 
@@ -124,7 +124,7 @@ docker compose up -d postgres redis qdrant
 
 ---
 
-## 🌐 Danh sách Endpoint chính
+## Danh sách Endpoint chính
 
 | Method | Endpoint | Access | Mô tả |
 |---|---|---|---|
@@ -138,6 +138,6 @@ docker compose up -d postgres redis qdrant
 
 ---
 
-## 📄 License
+## License
 
 Project thuộc quyền sở hữu riêng / thương mại.
