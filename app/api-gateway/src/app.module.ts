@@ -51,12 +51,14 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const runMigrations = configService.get<string>('RUN_MIGRATIONS') === 'true';
+
         const shared = {
           type: 'postgres' as const,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: false,
           migrations: [__dirname + '/db/migrations/*.{js,ts}'],
-          migrationsRun: true,
+          migrationsRun: runMigrations,
         };
 
         const databaseUrl = configService.get<string>('DATABASE_URL');
