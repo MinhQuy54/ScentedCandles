@@ -41,12 +41,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const statusCode = this.resolveStatus(exception);
     const { message, error } = this.resolveMessageAndError(exception, statusCode);
 
-    if (!appConfig.isProduction) {
-      this.logger.error(
-        `[Exception] ${request?.method} ${request?.url} - ${statusCode} - ${JSON.stringify(message)}`,
-        exception instanceof Error ? exception.stack : undefined,
-      );
-    }
+    this.logger.error(
+      `[Exception] ${request?.method} ${request?.url} - Status: ${statusCode} - Msg: ${JSON.stringify(message)}`,
+      exception instanceof Error ? exception.stack : undefined,
+    );
 
     response.status(statusCode).json({
       statusCode,

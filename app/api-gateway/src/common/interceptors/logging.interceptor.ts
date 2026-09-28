@@ -7,62 +7,75 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import logSymbols from 'log-symbols';
+import { Request } from 'express';
+
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'oldpassword',
+  'confirmpassword',
+  'token',
+  'accesstoken',
+  'refreshtoken',
+  'secret',
+  'creditcard',
+  'cvv',
+]);
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   private readonly name = 'HTTP-Log';
-  private logger = new Logger(this.name);
+  private readonly logger = new Logger(this.name);
 
-  private sanitizeBody(url: string, body: unknown): unknown {
-    if (!body || typeof body !== 'object') {
-      return body;
+  private sanitize(data: unknown): unknown {
+    if (data === null || data === undefined) {
+      return data;
     }
-    const isAuthRoute =
-      url.includes('/auth/login') || url.includes('/auth/register');
-    if (!isAuthRoute) {
-      return body;
+
+    if (Array.isArray(data)) {
+      return data.map((item) => this.sanitize(item));
     }
-    const record = { ...(body as Record<string, unknown>) };
-    if ('password' in record) {
-      record.password = '[REDACTED]';
+
+    if (typeof data === 'object') {
+      const sanitized: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+        if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+          sanitized[key] = '[REDACTED]';
+        } else {
+          sanitized[key] = this.sanitize(value);
+        }
+      }
+      return sanitized;
     }
-    return record;
+
+    return data;
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const now = Date.now();
+    const startTime = Date.now();
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<Request>();
-    const userAgent =
-      typeof request.headers.get === 'function'
-        ? request.headers.get('user-agent')
-        : (request.headers as unknown as Record<string, string | undefined>)['user-agent'];
-    const safeBody = this.sanitizeBody(request.url, request.body);
-    let log = `
-            *********************************************************************************
-            *      API Request  | [${request.method} -${request.url}] | REQ-${now}
-            *                   | [Agent] ${userAgent}`;
+
+    const method = request.method;
+    const url = request.originalUrl || request.url;
+    const userAgent = request.get ? request.get('user-agent') || 'Unknown' : (request.headers?.['user-agent'] as string) || 'Unknown';
+    const safeBody = this.sanitize(request.body);
+
     return next.handle().pipe(
-      tap(
-        () => {
-          log += `
-            *                   | [Data] ${JSON.stringify(safeBody)}
-            *      API Response | ${logSymbols.success} in ${Date.now() - now
-            } ms 
-            *********************************************************************************
-                `;
-          this.logger.log(log);
+      tap({
+        next: () => {
+          const duration = Date.now() - startTime;
+          this.logger.log(
+            `[${method}] ${url} - ${duration}ms | Agent: ${userAgent} | Body: ${JSON.stringify(safeBody)}`,
+          );
         },
-        () => {
-          log += `
-            *                   | [Data] ${JSON.stringify(safeBody)}
-            *      API Response | ${logSymbols.error} in ${Date.now() - now} ms 
-            *********************************************************************************
-                `;
-          this.logger.log(log);
+        error: (error) => {
+          const duration = Date.now() - startTime;
+          this.logger.warn(
+            `[${method}] ${url} - Failed in ${duration}ms | Error: ${error.message} | Body: ${JSON.stringify(safeBody)}`,
+          );
         },
-      ),
+      }),
     );
   }
 }
+
