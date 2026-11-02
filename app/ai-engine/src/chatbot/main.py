@@ -15,7 +15,7 @@ try:
 except ImportError:
     from .pipeline.embedding import embed_text
 
-load_dotenv(find_dotenv())
+load_dotenv(find_dotenv(), override=True)
 
 collection_name = os.getenv("QDRANT_COLLECTION_NAME", "aurascent_products")
 
@@ -29,13 +29,12 @@ def get_clients():
         raise ValueError("Chưa tìm thấy API_KEY trong biến môi trường!")
     if not qdrant_url:
         raise ValueError("Chưa tìm thấy QDRANT_URL trong biến môi trường!")
-    if not qdrant_api_key:
-        raise ValueError("Chưa tìm thấy QDRANT_API_KEY trong biến môi trường!")
 
     client = genai.Client(api_key=api_key)
     qdrant_client = QdrantClient(
         url=qdrant_url,
-        api_key=qdrant_api_key,
+        api_key=qdrant_api_key if qdrant_api_key and "dummy" not in qdrant_api_key else None,
+        check_compatibility=False,
     )
     return client, qdrant_client
 

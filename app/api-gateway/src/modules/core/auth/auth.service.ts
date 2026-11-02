@@ -56,7 +56,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly dynamicRbacService: DynamicRbacService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   private hashToken(raw: string): string {
     return createHash('sha256').update(raw).digest('hex');

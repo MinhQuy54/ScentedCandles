@@ -18,6 +18,10 @@ DB_URL = os.getenv("DATABASE_URL")
 
 if not DB_URL:
     raise ValueError("DATABASE_URL is not set")
+if DB_URL.startswith("postgres://"):
+    DB_URL = DB_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DB_URL.startswith("postgresql://"):
+    DB_URL = DB_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 engine = create_engine(DB_URL)
 
 

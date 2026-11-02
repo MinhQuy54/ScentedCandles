@@ -8,9 +8,7 @@ services:
     plan: free
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: scented-candles-postgres
-          property: connectionString
+        value: "postgresql://276v5yh5oi9u8y9a.postgres:ijP3mrb9VRRqEu1Kemnx5dOtwOIrQXaD@276v5yh5oi9u8y9a.gateway01.us-east-1.prod.aws.pg.tidbcloud.com:5432/postgres?sslmode=require"
       - key: REDIS_HOST
         fromService:
           type: redis
@@ -21,15 +19,12 @@ services:
           type: redis
           name: scented-candles-redis
           property: port
-      - key: AI_SERVICE_GRPC_URL
-        fromService:
-          type: web
-          name: scented-candles-ai-engine
-          property: hostport
       - key: PORT
         value: "3000"
       - key: FRONTEND_URL
         value: "https://aurascent-eight.vercel.app"
+      - key: CORS_ORIGINS
+        value: "https://aurascent-eight.vercel.app,http://localhost:5173"
       - key: PUBLIC_BASE_URL
         value: "https://scented-candles-api-gateway.onrender.com"
       - key: AI_CHATBOT_URL
@@ -40,28 +35,16 @@ services:
         value: "true"
       - key: JWT_SECRET
         generateValue: true
+      - key: SEPAY_WEBHOOK_API_KEY
+        value: "AuraScent_Secret_Key_2026"
+      - key: VIETQR_BANK_ID
+        value: "MB"
+      - key: VIETQR_ACCOUNT_NO
+        value: "0325367066"
+      - key: VIETQR_ACCOUNT_NAME
+        value: "NGO MINH QUY"
 
-  # 2. AI Engine (Python gRPC Service - Web Service for Free Plan)
-  - type: web
-    name: scented-candles-ai-engine
-    runtime: docker
-    rootDir: app/ai-engine
-    dockerfilePath: Dockerfile
-    plan: free
-    envVars:
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: scented-candles-redis
-          property: connectionString
-
-  # 3. Redis Cache / Message Broker
-  - type: redis
-    name: scented-candles-redis
-    plan: free
-    ipAllowList: []
-
-  # 4. AI Chatbot + Celery Worker (FastAPI Streaming + Celery Worker Combo Container)
+  # 2. AI Chatbot + Celery Worker (FastAPI Streaming + Celery Worker Combo Container)
   - type: web
     name: scented-candles-ai-chatbot
     runtime: docker
@@ -76,24 +59,21 @@ services:
       - key: QDRANT_COLLECTION_NAME
         value: "aurascent_products"
       - key: DATABASE_URL
-        fromDatabase:
-          name: scented-candles-postgres
-          property: connectionString
+        value: "postgresql://276v5yh5oi9u8y9a.postgres:ijP3mrb9VRRqEu1Kemnx5dOtwOIrQXaD@276v5yh5oi9u8y9a.gateway01.us-east-1.prod.aws.pg.tidbcloud.com:5432/postgres?sslmode=require"
       - key: REDIS_URL
         fromService:
           type: redis
           name: scented-candles-redis
           property: connectionString
       - key: API_KEY
-        sync: false
+        value: "AIzaSyDkXXPQhSs0C9Xd9QUW4lxfG9Ryb1hlJUg"
       - key: QDRANT_URL
-        sync: false
+        value: "https://bc1b2c44-7843-47c6-bde9-4faf0cbc4f69.us-west-2-0.aws.cloud.qdrant.io"
       - key: QDRANT_API_KEY
-        sync: false
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6ZjkzODk3ZTktOWVkZC00YTkxLTg2MWYtOWVhYWRlNWU2NmIxIn0.Jh5YQeFwFnEUKg2h77UBTz9ICbRXXKqxIhfLbTbitds"
 
-databases:
-  # 5. PostgreSQL Database
-  - name: scented-candles-postgres
-    databaseName: scented_candles
-    user: scented_user
+  # 3. Redis Cache / Message Broker
+  - type: redis
+    name: scented-candles-redis
     plan: free
+    ipAllowList: []
