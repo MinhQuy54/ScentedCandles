@@ -36,7 +36,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: SEPAY_WEBHOOK_API_KEY
-        value: "AuraScent_Secret_Key_2026"
+        sync: false
       - key: VIETQR_BANK_ID
         value: "MB"
       - key: VIETQR_ACCOUNT_NO
@@ -66,11 +66,11 @@ services:
           name: scented-candles-redis
           property: connectionString
       - key: API_KEY
-        value: "AIzaSyDkXXPQhSs0C9Xd9QUW4lxfG9Ryb1hlJUg"
+        sync: false
       - key: QDRANT_URL
-        value: "https://bc1b2c44-7843-47c6-bde9-4faf0cbc4f69.us-west-2-0.aws.cloud.qdrant.io"
+        sync: false
       - key: QDRANT_API_KEY
-        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6ZjkzODk3ZTktOWVkZC00YTkxLTg2MWYtOWVhYWRlNWU2NmIxIn0.Jh5YQeFwFnEUKg2h77UBTz9ICbRXXKqxIhfLbTbitds"
+        sync: false
 
   # 3. Redis Cache / Message Broker
   - type: redis
