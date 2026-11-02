@@ -8,8 +8,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 1. Security Headers with Helmet 
-  // Auto add security headers to HTTP responses(XSS, CSRF, clickjacking, etc)
-  app.use(helmet());
+  // Cho phép load tài nguyên (ảnh upload) từ origin khác (Vercel)
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   // 2. Production-Ready CORS Policy
   const allowedOrigins = process.env.ALLOWED_ORIGINS

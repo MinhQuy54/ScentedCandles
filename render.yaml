@@ -66,11 +66,11 @@ services:
           name: scented-candles-redis
           property: connectionString
       - key: API_KEY
-        sync: false
+        value: "AIzaSyDkXXPQhSs0C9Xd9QUW4lxfG9Ryb1hlJUg"
       - key: QDRANT_URL
-        sync: false
+        value: "https://bc1b2c44-7843-47c6-bde9-4faf0cbc4f69.us-west-2-0.aws.cloud.qdrant.io"
       - key: QDRANT_API_KEY
-        sync: false
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6ZjkzODk3ZTktOWVkZC00YTkxLTg2MWYtOWVhYWRlNWU2NmIxIn0.Jh5YQeFwFnEUKg2h77UBTz9ICbRXXKqxIhfLbTbitds"
 
   # 3. Redis Cache / Message Broker
   - type: redis
